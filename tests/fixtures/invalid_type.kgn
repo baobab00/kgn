@@ -1,0 +1,12 @@
+---
+kgn_version: "0.1"
+id: "660e8400-e29b-41d4-a716-446655440000"
+type: INVALID_TYPE
+title: "Invalid Type Test"
+status: ACTIVE
+project_id: "proj-alpha"
+agent_id: "worker-agent-03"
+created_at: "2026-02-27T10:00:00+09:00"
+---
+
+This file has an invalid type value and should be rejected by the parser.

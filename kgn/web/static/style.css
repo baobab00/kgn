@@ -1,0 +1,123 @@
+/* ── KGN Web — Global Design System (R13: CDN only) ──────────────── */
+/* All views share these tokens, resets and utility classes.           */
+
+/* ── Design Tokens ──────────────────────────────────────────────── */
+:root {
+    /* Brand */
+    --kgn-primary: #3b82f6;
+    --kgn-primary-hover: #2563eb;
+    --kgn-primary-light: #eff6ff;
+    --kgn-primary-ring: rgba(59, 130, 246, 0.25);
+
+    /* Neutrals */
+    --kgn-gray-50:  #f9fafb;
+    --kgn-gray-100: #f3f4f6;
+    --kgn-gray-200: #e5e7eb;
+    --kgn-gray-300: #d1d5db;
+    --kgn-gray-400: #9ca3af;
+    --kgn-gray-500: #6b7280;
+    --kgn-gray-600: #4b5563;
+    --kgn-gray-700: #374151;
+    --kgn-gray-800: #1f2937;
+
+    /* Semantic */
+    --kgn-success: #22c55e;
+    --kgn-warning: #f59e0b;
+    --kgn-danger:  #ef4444;
+    --kgn-info:    #3b82f6;
+
+    /* Surfaces */
+    --kgn-bg:      #f0f2f5;
+    --kgn-surface:  #ffffff;
+
+    /* Borders & Shadows */
+    --kgn-border:   #e5e7eb;
+    --kgn-radius:   10px;
+    --kgn-radius-sm: 6px;
+    --kgn-radius-xs: 4px;
+    --kgn-shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+    --kgn-shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+    --kgn-shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+
+    /* Transitions */
+    --kgn-ease: 0.2s ease;
+    --kgn-ease-fast: 0.15s ease;
+
+    /* Typography */
+    --kgn-font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --kgn-font-mono: ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
+    --kgn-text-xs:  0.72rem;
+    --kgn-text-sm:  0.82rem;
+    --kgn-text-base: 0.9rem;
+    --kgn-text-lg:  1rem;
+    --kgn-text-xl:  1.15rem;
+}
+
+/* ── Global Layout ──────────────────────────────────────────────── */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+body {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    font-family: var(--kgn-font);
+    background: var(--kgn-bg);
+    color: var(--kgn-gray-800);
+    font-size: var(--kgn-text-base);
+    line-height: 1.5;
+}
+
+/* View containers fill remaining space via flex */
+.view-container {
+    display: none;
+    flex: 1;
+    min-height: 0;          /* allow flex shrinking */
+    overflow: hidden;
+    padding: 0;
+    background: var(--kgn-bg);
+}
+
+.view-container.active {
+    display: flex;
+}
+
+/* Scrollable views get bottom padding for taskbar clearance */
+#overview-view,
+#agents-view,
+#dashboard-view {
+    padding-bottom: 3rem;
+}
+
+/* ── Section heading ────────────────────────────────────────────── */
+.view-container h2 {
+    font-size: var(--kgn-text-xl);
+    font-weight: 700;
+    margin: 0 0 0.75rem;
+    color: var(--kgn-gray-800);
+}
+
+/* ── Scrollbar styling ──────────────────────────────────────────── */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: var(--kgn-gray-300);
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--kgn-gray-400);
+}
+
+/* ── Selection ──────────────────────────────────────────────────── */
+::selection {
+    background: var(--kgn-primary-ring);
+}

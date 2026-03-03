@@ -1,0 +1,340 @@
+"""KGN CLI — core commands: init, ingest, status, health."""
+
+from __future__ import annotations
+
+import os
+import uuid
+from pathlib import Path
+from typing import Annotated
+
+import typer
+from rich.panel import Panel
+from rich.text import Text
+
+from kgn.cli._app import _project_not_found, app, console
+
+# ── init ───────────────────────────────────────────────────────────────
+
+
+@app.command()
+def init(
+    project: str = typer.Option(..., "--project", "-p", help="Project name"),
+) -> None:
+    """Initialize project — run DB migrations and create project record."""
+    from kgn.db.connection import close_pool, get_connection
+    from kgn.db.migrations import run_migrations
+    from kgn.db.repository import KgnRepository
+
+    console.print(f"\n[bold]KGN Init — {project}[/bold]\n")
+
+    try:
+        with get_connection() as conn:
+            # Run migrations
+            console.print("[bold]Running migrations...[/bold]")
+            applied = run_migrations(conn)
+
+            if applied:
+                console.print(f"\n  Applied {len(applied)} migration(s)")
+            else:
+                console.print("\n  All migrations already applied")
+
+            # Create project record (if not exists)
+            repo = KgnRepository(conn)
+            existing_id = repo.get_project_by_name(project)
+
+            if existing_id:
+                console.print(
+                    f"\n[dim]Project '{project}' already exists (id: {existing_id})[/dim]"
+                )
+            else:
+                new_id = repo.get_or_create_project(project)
+                console.print(f"\n[green]✅ Project '{project}' created (id: {new_id})[/green]")
+
+            conn.commit()
+
+        console.print("\n[bold green]Init complete.[/bold green]\n")
+
+    except Exception as e:
+        console.print(f"\n[bold red]Error:[/bold red] {e}\n")
+        raise typer.Exit(code=1) from e
+    finally:
+        close_pool()
+
+
+# ── ingest ─────────────────────────────────────────────────────────────
+
+
+@app.command()
+def ingest(
+    path: Annotated[Path, typer.Argument(help=".kgn/.kge file or directory path")],
+    project: Annotated[str, typer.Option("--project", "-p", help="Project name")],
+    agent: Annotated[
+        str,
+        typer.Option("--agent", "-a", help="Agent key (default: cli-agent)"),
+    ] = "cli-agent",
+    recursive: Annotated[
+        bool,
+        typer.Option("--recursive", "-r", help="Recurse into directories"),
+    ] = False,
+    embed: Annotated[
+        bool,
+        typer.Option("--embed", help="Auto-generate embeddings after ingest"),
+    ] = False,
+) -> None:
+    """Ingest files/directories into the knowledge graph DB."""
+    from kgn.db.connection import close_pool, get_connection
+    from kgn.db.repository import KgnRepository
+    from kgn.ingest.service import IngestService
+
+    target = path.resolve()
+
+    if not target.exists():
+        console.print(f"\n[bold red]Error:[/bold red] Path not found: {target}\n")
+        raise typer.Exit(code=1)
+
+    # Validate API key early when --embed is requested
+    if embed:
+        api_key = os.environ.get("KGN_OPENAI_API_KEY", "")
+        if not api_key:
+            console.print(
+                "\n[bold red]Error:[/bold red] "
+                "KGN_OPENAI_API_KEY environment variable is not set.\n"
+            )
+            raise typer.Exit(code=1)
+
+    console.print(f"\n[bold]KGN Ingest — {project}[/bold]")
+    console.print(f"  Path: {target}")
+    console.print(f"  Recursive: {recursive}")
+    if embed:
+        console.print("  Embed: ✅")
+    console.print()
+
+    try:
+        with get_connection() as conn:
+            repo = KgnRepository(conn)
+
+            # Ensure project & agent exist
+            project_id = repo.get_or_create_project(project)
+            agent_id = repo.get_or_create_agent(
+                project_id=project_id,
+                agent_key=agent,
+            )
+
+            service = IngestService(
+                repo=repo,
+                project_id=project_id,
+                agent_id=agent_id,
+            )
+
+            batch = service.ingest_path(target, recursive=recursive)
+
+            # Embed mutated nodes if requested
+            embedded_count = 0
+            if embed and batch.mutated_node_ids:
+                embedded_count = _run_embed_after_ingest(repo, batch.mutated_node_ids, project_id)
+
+            conn.commit()
+
+        # ── Rich output ───────────────────────────────────────────
+        _print_ingest_result(batch, embedded_count=embedded_count)
+
+        if batch.failed > 0:
+            raise typer.Exit(code=1)
+
+    except typer.Exit:
+        raise
+    except Exception as e:
+        console.print(f"\n[bold red]Error:[/bold red] {e}\n")
+        raise typer.Exit(code=1) from e
+    finally:
+        close_pool()
+
+
+def _run_embed_after_ingest(
+    repo: KgnRepository,  # noqa: F821
+    node_ids: list[uuid.UUID],
+    project_id: uuid.UUID,
+) -> int:
+    """Embed nodes after ingest. Returns count of embedded nodes.
+
+    Failures are logged as warnings; ingest success is not affected.
+    """
+    from kgn.embedding.factory import create_embedding_client
+    from kgn.embedding.service import EmbeddingService
+
+    client = create_embedding_client()
+    if client is None:
+        console.print(
+            "\n[bold yellow]Warning:[/bold yellow] "
+            "Embedding provider not configured — skipping embeddings\n"
+        )
+        return 0
+    try:
+        svc = EmbeddingService(repo=repo, client=client)
+        return svc.embed_nodes(node_ids, project_id)
+    except Exception as exc:
+        console.print(
+            f"\n[bold yellow]Warning:[/bold yellow] "
+            f"Embedding generation failed (ingest succeeded): {exc}\n"
+        )
+        return 0
+
+
+def _print_ingest_result(
+    batch: IngestBatchResult,  # noqa: F821
+    *,
+    embedded_count: int = 0,
+) -> None:
+    """Pretty-print batch ingest results using Rich Panel."""
+
+    body = Text()
+    body.append("✅ Success:  ", style="green")
+    body.append(f"{batch.success}\n")
+    body.append("⏭️  Skipped:  ", style="yellow")
+    body.append(f"{batch.skipped}  (content unchanged)\n")
+    body.append("❌ Failed:   ", style="red")
+    body.append(f"{batch.failed}\n")
+
+    if embedded_count > 0:
+        body.append("🧠 Embedded: ", style="magenta")
+        body.append(f"{embedded_count}\n")
+
+    # Failed file details
+    failed_items = [d for d in batch.details if d.status == "FAILED"]
+    if failed_items:
+        body.append("\nFailed files:\n", style="bold red")
+        for item in failed_items:
+            body.append(f"  - {item.file_path}: {item.error}\n", style="red")
+
+    panel = Panel(body, title="KGN Ingest Results", border_style="blue")
+    console.print(panel)
+
+
+# ── status ─────────────────────────────────────────────────────────────
+
+
+@app.command()
+def status(
+    project: Annotated[str, typer.Option("--project", "-p", help="Project name")],
+) -> None:
+    """Project summary — node/edge count output."""
+    from kgn.db.connection import close_pool, get_connection
+    from kgn.db.repository import KgnRepository
+
+    try:
+        with get_connection() as conn:
+            repo = KgnRepository(conn)
+
+            # Project lookup
+            project_id = repo.get_project_by_name(project)
+            if not project_id:
+                _project_not_found(project)
+
+            node_counts = repo.count_nodes(project_id)
+            edge_counts = repo.count_edges(project_id)
+            last_ingest = repo.last_ingest_at(project_id)
+
+            total_nodes = sum(node_counts.values())
+            total_edges = sum(edge_counts.values())
+
+            breakdown = ", ".join(f"{k}:{v}" for k, v in sorted(node_counts.items()))
+
+            body = Text()
+            body.append(f"Project: {project}\n", style="bold")
+            body.append(f"Nodes: {total_nodes}")
+            if breakdown:
+                body.append(f" ({breakdown})")
+            body.append("\n")
+            body.append(f"Edges: {total_edges}\n")
+            if last_ingest:
+                body.append(f"Last Ingest: {last_ingest.strftime('%Y-%m-%d %H:%M:%S')}\n")
+            else:
+                body.append("Last Ingest: —\n")
+
+            panel = Panel(body, title="KGN Status", border_style="cyan")
+            console.print(panel)
+
+    except typer.Exit:
+        raise
+    except Exception as e:
+        console.print(f"\n[bold red]Error:[/bold red] {e}\n")
+        raise typer.Exit(code=1) from e
+    finally:
+        close_pool()
+
+
+# ── health ─────────────────────────────────────────────────────────────
+
+
+@app.command()
+def health(
+    project: Annotated[str, typer.Option("--project", "-p", help="Project name")],
+) -> None:
+    """Graph health metrics — orphan rate, conflict, superseded stale, etc."""
+    from kgn.db.connection import close_pool, get_connection
+    from kgn.db.repository import KgnRepository
+    from kgn.graph.health import HealthService
+
+    try:
+        with get_connection() as conn:
+            repo = KgnRepository(conn)
+
+            project_id = repo.get_project_by_name(project)
+            if not project_id:
+                _project_not_found(project)
+
+            svc = HealthService(repo)
+            report = svc.compute(project_id)
+
+        _print_health_report(project, report)
+
+    except typer.Exit:
+        raise
+    except Exception as e:
+        console.print(f"\n[bold red]Error:[/bold red] {e}\n")
+        raise typer.Exit(code=1) from e
+    finally:
+        close_pool()
+
+
+def _print_health_report(project: str, r: HealthReport) -> None:  # noqa: F821
+    """Render health report as a Rich Panel."""
+    body = Text()
+    body.append(f"📊 Total Nodes:        {r.total_nodes}\n")
+    body.append(f"🔗 Total Edges:        {r.total_edges}\n")
+    body.append("\n")
+
+    # Orphan Rate
+    if r.active_nodes > 0:
+        pct = f"{r.orphan_rate * 100:.1f}%"
+        label = f"☠️  Orphan Rate:        {pct} ({r.orphan_active}/{r.active_nodes})"
+    else:
+        label = "☠️  Orphan Rate:        — (no active nodes)"
+    icon = "  ✅" if r.orphan_rate_ok else "  ⚠️"
+    body.append(f"{label}{icon}\n")
+
+    # Conflict Count
+    icon = "  ✅" if r.conflict_ok else "  ❌"
+    body.append(f"⚔️  Conflict Count:     {r.conflict_count}{icon}\n")
+
+    # Superseded Stale
+    icon = "  ✅" if r.superseded_stale_ok else "  ❌"
+    body.append(f"📦 Superseded Stale:   {r.superseded_stale}{icon}\n")
+
+    # DupSpecRate
+    if r.spec_nodes > 0:
+        pct = f"{r.dup_spec_rate * 100:.1f}%"
+        label = f"📋 DupSpecRate:        {pct} ({r.pending_contradicts}/{r.spec_nodes})"
+    else:
+        label = "📋 DupSpecRate:        — (no SPEC nodes)"
+    icon = "  ✅" if r.dup_spec_rate_ok else "  ⚠️"
+    body.append(f"{label}{icon}\n")
+
+    # WIP Tasks
+    body.append(f"🔨 Work In Progress:   {r.wip_tasks} tasks\n")
+
+    # Open Assumptions
+    body.append(f"❓ Open Assumptions:   {r.open_assumptions}\n")
+
+    panel = Panel(body, title=f"Graph Health — {project}", border_style="green")
+    console.print(panel)

@@ -1,0 +1,2 @@
+This file is plain text without YAML front matter.
+The parser should raise a V1 error.

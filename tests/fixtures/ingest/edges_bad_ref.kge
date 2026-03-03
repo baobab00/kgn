@@ -1,0 +1,11 @@
+---
+kgn_version: "0.1"
+project_id: "proj-alpha"
+agent_id: "worker-agent-03"
+created_at: "2026-02-27T11:00:00+09:00"
+edges:
+  - from: "new:nonexistent-slug"
+    to:   "new:auth-spec"
+    type: DEPENDS_ON
+    note: "Reference to nonexistent slug"
+---

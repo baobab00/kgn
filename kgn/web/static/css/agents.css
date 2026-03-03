@@ -1,0 +1,289 @@
+/* ── KGN Web — Agents View Styles ─────────────────────────────────── */
+
+/* ── Agents view container ───────────────────────────────────────── */
+#agents-view {
+    overflow-y: auto;
+    padding: 1.5rem;
+    padding-bottom: 3rem;
+    flex-direction: column;
+}
+
+/* ── Agent cards grid ────────────────────────────────────────────── */
+.agents-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.agent-card {
+    background: var(--kgn-surface, #fff);
+    border: 1px solid var(--kgn-border, #e5e7eb);
+    border-radius: var(--kgn-radius, 10px);
+    padding: 1rem;
+    cursor: pointer;
+    transition: box-shadow var(--kgn-ease, 0.2s ease),
+                border-color var(--kgn-ease, 0.2s ease),
+                transform var(--kgn-ease, 0.2s ease);
+    border-top: 3px solid var(--kgn-gray-400, #94a3b8);
+}
+
+.agent-card:hover {
+    box-shadow: var(--kgn-shadow-md, 0 4px 12px rgba(0,0,0,0.08));
+    border-color: var(--kgn-primary, #3b82f6);
+    transform: translateY(-2px);
+}
+
+.agent-card.selected {
+    border-color: var(--kgn-primary, #3b82f6);
+    box-shadow: 0 0 0 3px var(--kgn-primary-ring, rgba(59, 130, 246, 0.25));
+    background: var(--kgn-primary-light, #eff6ff);
+}
+
+/* Role-based top border colours */
+.agent-card.role-admin    { border-top-color: #ef4444; }
+.agent-card.role-worker   { border-top-color: #3b82f6; }
+.agent-card.role-reviewer { border-top-color: #8b5cf6; }
+.agent-card.role-indexer  { border-top-color: #22c55e; }
+.agent-card.role-genesis  { border-top-color: #f59e0b; }
+
+/* ── Card internals ──────────────────────────────────────────────── */
+.agent-name {
+    font-weight: 700;
+    font-size: var(--kgn-text-lg, 1rem);
+    margin-bottom: 0.3rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.agent-role-badge {
+    display: inline-block;
+    padding: 0.1rem 0.5rem;
+    border-radius: 10px;
+    font-size: var(--kgn-text-xs, 0.72rem);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #fff;
+}
+
+.agent-role-badge.role-admin    { background: #ef4444; }
+.agent-role-badge.role-worker   { background: #3b82f6; }
+.agent-role-badge.role-reviewer { background: #8b5cf6; }
+.agent-role-badge.role-indexer  { background: #22c55e; }
+.agent-role-badge.role-genesis  { background: #f59e0b; }
+
+.agent-stats-row {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+    font-size: var(--kgn-text-sm, 0.82rem);
+}
+
+.agent-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.agent-stat-value {
+    font-weight: 700;
+    font-size: 1.1rem;
+    line-height: 1.2;
+}
+
+.agent-stat-label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    color: var(--kgn-gray-500, #6b7280);
+    letter-spacing: 0.04em;
+}
+
+.stat-done   .agent-stat-value { color: var(--kgn-success, #22c55e); }
+.stat-failed .agent-stat-value { color: var(--kgn-danger, #ef4444); }
+.stat-total  .agent-stat-value { color: var(--kgn-primary, #3b82f6); }
+.stat-rate   .agent-stat-value { color: #8b5cf6; }
+
+.agent-avg-time {
+    font-size: var(--kgn-text-xs, 0.72rem);
+    color: var(--kgn-gray-400, #9ca3af);
+    margin-top: 0.35rem;
+}
+
+/* ── Timeline panel — STABLE LAYOUT ──────────────────────────────── */
+/* The layout uses a fixed 2-col grid. The timeline section has a     */
+/* fixed height so clicking different agents never causes layout       */
+/* shifts or jumps.                                                    */
+
+.agents-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    align-items: stretch;              /* both cols same height */
+    min-height: 0;
+}
+
+.agents-list-section {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.agents-timeline-section {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--kgn-surface, #fff);
+    border: 1px solid var(--kgn-border, #e5e7eb);
+    border-radius: var(--kgn-radius, 10px);
+    padding: 1rem 1.25rem;
+    /* Fixed height prevents jumps on agent selection */
+    height: calc(100vh - 180px);
+    max-height: calc(100vh - 180px);
+    overflow: hidden;
+}
+
+.timeline-header {
+    font-size: var(--kgn-text-lg, 1rem);
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    color: var(--kgn-gray-700, #374151);
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--kgn-gray-200, #e5e7eb);
+    flex-shrink: 0;
+}
+
+.timeline-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    flex: 1;                           /* fill remaining space */
+    overflow-y: auto;
+    min-height: 0;                     /* allow flex shrinking */
+    padding-right: 0.25rem;            /* room for scrollbar */
+}
+
+.timeline-entry {
+    display: flex;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border-left: 3px solid var(--kgn-gray-200, #e5e7eb);
+    background: var(--kgn-gray-50, #fafafa);
+    border-radius: 0 var(--kgn-radius-sm, 6px) var(--kgn-radius-sm, 6px) 0;
+    font-size: var(--kgn-text-sm, 0.82rem);
+    transition: border-color var(--kgn-ease-fast, 0.15s ease),
+                background var(--kgn-ease-fast, 0.15s ease);
+    flex-shrink: 0;
+}
+
+.timeline-entry:hover {
+    border-left-color: var(--kgn-primary, #3b82f6);
+    background: var(--kgn-primary-light, #eff6ff);
+}
+
+.timeline-time {
+    font-size: var(--kgn-text-xs, 0.72rem);
+    color: var(--kgn-gray-400, #9ca3af);
+    min-width: 6rem;
+    white-space: nowrap;
+    font-family: var(--kgn-font-mono, monospace);
+}
+
+.timeline-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.timeline-type {
+    display: inline-block;
+    padding: 0.08rem 0.4rem;
+    border-radius: 3px;
+    font-size: var(--kgn-text-xs, 0.72rem);
+    font-weight: 600;
+    margin-right: 0.3rem;
+}
+
+.timeline-type.NODE_CREATED  { background: #dcfce7; color: #166534; }
+.timeline-type.NODE_UPDATED  { background: #dbeafe; color: #1e40af; }
+.timeline-type.TASK_CHECKOUT { background: #fef3c7; color: #92400e; }
+.timeline-type.TASK_COMPLETE { background: #d1fae5; color: #065f46; }
+.timeline-type.TASK_FAIL     { background: #fee2e2; color: #991b1b; }
+.timeline-type.EDGE_CREATED  { background: #e0e7ff; color: #3730a3; }
+.timeline-type.HANDOFF       { background: #fae8ff; color: #86198f; }
+.timeline-type.LOCK_ACQUIRED { background: #f3e8ff; color: #6b21a8; }
+.timeline-type.LOCK_RELEASED { background: #f5f3ff; color: #7c3aed; }
+
+.timeline-message {
+    color: var(--kgn-gray-700, #374151);
+    word-break: break-word;
+}
+
+.timeline-agent {
+    font-size: var(--kgn-text-xs, 0.72rem);
+    color: var(--kgn-gray-500, #6b7280);
+}
+
+.timeline-empty {
+    text-align: center;
+    color: var(--kgn-gray-400, #9ca3af);
+    font-style: italic;
+    padding: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+}
+
+/* ── Kanban card agent enhancement ───────────────────────────────── */
+.card-agent-info {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.76rem;
+    color: var(--kgn-gray-500, #6b7280);
+    margin-top: 0.2rem;
+}
+
+.card-agent-role {
+    display: inline-block;
+    padding: 0.05rem 0.3rem;
+    border-radius: 3px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #fff;
+}
+
+.card-agent-role.role-admin    { background: #ef4444; }
+.card-agent-role.role-worker   { background: #3b82f6; }
+.card-agent-role.role-reviewer { background: #8b5cf6; }
+.card-agent-role.role-indexer  { background: #22c55e; }
+.card-agent-role.role-genesis  { background: #f59e0b; }
+
+/* ── Dashboard agent charts section ──────────────────────────────── */
+.dash-agent-section {
+    margin-top: 1.5rem;
+}
+
+.dash-agent-section h3 {
+    font-size: var(--kgn-text-lg, 1rem);
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+    .agents-layout {
+        grid-template-columns: 1fr;
+    }
+    .agents-timeline-section {
+        height: 400px;
+        max-height: 400px;
+    }
+}
+
+@media (max-width: 600px) {
+    .agents-grid {
+        grid-template-columns: 1fr;
+    }
+}

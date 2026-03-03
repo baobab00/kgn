@@ -1,0 +1,20 @@
+---
+kgn_version: "0.1"
+id: "new:auth-spec"
+type: SPEC
+title: "Auth Module Spec A"
+status: ACTIVE
+project_id: "proj-alpha"
+agent_id: "worker-agent-03"
+created_at: "2026-02-27T10:00:00+09:00"
+tags: ["auth"]
+confidence: 0.9
+---
+
+## Context
+
+Description of the authentication module.
+
+## Content
+
+Implement OAuth 2.0 based authentication.

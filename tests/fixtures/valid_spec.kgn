@@ -1,0 +1,36 @@
+---
+kgn_version: "0.1"
+id: "550e8400-e29b-41d4-a716-446655440000"
+type: SPEC
+title: "User Authentication Specification"
+status: ACTIVE
+project_id: "proj-alpha"
+agent_id: "worker-agent-03"
+created_at: "2026-02-27T10:00:00+09:00"
+supersedes: "450e8400-e29b-41d4-a716-446655440001"
+tags: ["auth", "security"]
+confidence: 0.92
+---
+
+## Context
+
+This node defines the specification for a social login user authentication system.
+
+## Content
+
+- OAuth 2.0 social login (Google, GitHub)
+- JWT access token + refresh token
+- Refresh Token Rotation (RTR) applied on token renewal
+
+## Rationale
+
+OAuth 2.0 was chosen to balance security and user convenience.
+
+## Constraints
+
+- PII data must be stored on domestic servers only
+- Access token validity: 15 minutes
+
+## Open Questions
+
+- Whether to add email authentication in addition to social login

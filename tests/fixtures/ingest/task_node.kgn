@@ -1,0 +1,20 @@
+---
+kgn_version: "0.1"
+id: "new:e2e-task-01"
+type: TASK
+title: "E2E Task: Implement Auth Module"
+status: ACTIVE
+project_id: "proj-alpha"
+agent_id: "worker-agent-03"
+created_at: "2026-02-28T12:00:00+09:00"
+tags: ["e2e", "task"]
+confidence: 0.8
+---
+
+## Context
+
+Task node used in E2E testing.
+
+## Content
+
+Implement the OAuth 2.0 flow for the authentication module.

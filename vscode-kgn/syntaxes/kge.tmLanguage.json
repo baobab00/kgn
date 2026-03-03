@@ -1,0 +1,105 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "KGN Edge",
+  "scopeName": "source.kge",
+  "fileTypes": ["kge"],
+  "patterns": [
+    { "include": "#edge-document" }
+  ],
+  "repository": {
+    "edge-document": {
+      "comment": "KGE files are full YAML documents (no Markdown body)",
+      "patterns": [
+        { "include": "#document-separator" },
+        { "include": "#kge-keys" },
+        { "include": "#kge-edge-type-enum" },
+        { "include": "#kge-uuid" },
+        { "include": "#kge-new-id" },
+        { "include": "#yaml-comment" },
+        { "include": "#yaml-string-double" },
+        { "include": "#yaml-string-single" },
+        { "include": "#yaml-number" },
+        { "include": "#yaml-boolean" },
+        { "include": "#yaml-null" }
+      ]
+    },
+
+    "document-separator": {
+      "match": "^---\\s*$",
+      "name": "punctuation.definition.document.yaml"
+    },
+
+    "kge-keys": {
+      "comment": "KGE-specific YAML keys — synced with kgn.models.edge",
+      "match": "^\\s*(kgn_version|project_id|agent_id|created_at|edges|from|to|type|note)\\s*(:)",
+      "captures": {
+        "1": { "name": "entity.name.tag.kge" },
+        "2": { "name": "punctuation.separator.key-value.yaml" }
+      }
+    },
+
+    "kge-edge-type-enum": {
+      "comment": "EdgeType enum values — synced with kgn.models.enums.EdgeType",
+      "match": "\\b(DEPENDS_ON|IMPLEMENTS|RESOLVES|SUPERSEDES|DERIVED_FROM|CONTRADICTS|CONSTRAINED_BY)\\b",
+      "name": "constant.language.enum.edge-type.kge"
+    },
+
+    "kge-uuid": {
+      "comment": "UUID v4 pattern",
+      "match": "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}",
+      "name": "constant.other.uuid.kge"
+    },
+
+    "kge-new-id": {
+      "comment": "Temporary new: slug identifiers",
+      "match": "\\bnew:[\\w\\-\\.]+",
+      "name": "variable.other.slug.kge"
+    },
+
+    "yaml-comment": {
+      "match": "(?:^|\\s)(#.*)$",
+      "captures": {
+        "1": { "name": "comment.line.number-sign.yaml" }
+      }
+    },
+
+    "yaml-string-double": {
+      "begin": "\"",
+      "end": "\"",
+      "name": "string.quoted.double.yaml",
+      "patterns": [
+        {
+          "match": "\\\\.",
+          "name": "constant.character.escape.yaml"
+        }
+      ]
+    },
+
+    "yaml-string-single": {
+      "begin": "'",
+      "end": "'",
+      "name": "string.quoted.single.yaml",
+      "patterns": [
+        {
+          "match": "''",
+          "name": "constant.character.escape.yaml"
+        }
+      ]
+    },
+
+    "yaml-number": {
+      "match": "(?<=:\\s)[-+]?(?:\\d+\\.?\\d*|\\d*\\.\\d+)(?:[eE][-+]?\\d+)?\\s*$",
+      "name": "constant.numeric.yaml"
+    },
+
+    "yaml-boolean": {
+      "match": "(?<=:\\s)(?:true|false|True|False|TRUE|FALSE)\\s*$",
+      "name": "constant.language.boolean.yaml"
+    },
+
+    "yaml-null": {
+      "match": "(?<=:\\s)(?:null|Null|NULL|~)\\s*$",
+      "name": "constant.language.null.yaml"
+    }
+  }
+}

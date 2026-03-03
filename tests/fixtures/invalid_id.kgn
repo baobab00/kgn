@@ -1,0 +1,12 @@
+---
+kgn_version: "0.1"
+id: "not-a-uuid-at-all"
+type: GOAL
+title: "Invalid ID Format"
+status: ACTIVE
+project_id: "proj-alpha"
+agent_id: "worker-agent-03"
+created_at: "2026-02-27T12:00:00+09:00"
+---
+
+This file's id is neither a UUID v4 nor has the new: prefix.

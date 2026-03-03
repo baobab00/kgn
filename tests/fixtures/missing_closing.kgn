@@ -1,0 +1,9 @@
+---
+kgn_version: "0.1"
+id: "990e8400-e29b-41d4-a716-446655440000"
+type: ARCH
+title: "File Without Closing Delimiter"
+status: ACTIVE
+project_id: "proj-alpha"
+agent_id: "worker-agent-03"
+This file has no closing delimiter

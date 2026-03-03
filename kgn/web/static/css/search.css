@@ -1,0 +1,148 @@
+/* KGN Web — Search & Filter styles */
+
+/* ── Search bar container ──────────────────────────────────────────── */
+
+.search-bar {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--kgn-border, #e5e7eb);
+    background: var(--kgn-surface, #fff);
+}
+
+.search-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.search-input-wrap {
+    flex: 1;
+}
+
+.search-input-wrap input[type="search"] {
+    margin: 0;
+    padding: 0.35rem 0.5rem;
+    font-size: var(--kgn-text-sm, 0.82rem);
+    height: auto;
+    border-radius: var(--kgn-radius-sm, 6px);
+}
+
+/* ── Filter toggle / clear buttons ─────────────────────────────────── */
+
+.sf-btn {
+    padding: 0.3rem 0.7rem;
+    font-size: var(--kgn-text-xs, 0.72rem);
+    border: 1.5px solid var(--kgn-gray-400, #9ca3af);
+    border-radius: var(--kgn-radius-sm, 6px);
+    background: var(--kgn-gray-100, #f3f4f6);
+    color: var(--kgn-gray-700, #374151);
+    cursor: pointer;
+    white-space: nowrap;
+    line-height: 1.4;
+    font-weight: 600;
+    transition: background var(--kgn-ease-fast), color var(--kgn-ease-fast);
+    /* Reset Pico CSS button defaults */
+    --pico-background-color: var(--kgn-gray-100, #f3f4f6);
+    --pico-border-color: var(--kgn-gray-400, #9ca3af);
+    --pico-color: var(--kgn-gray-700, #374151);
+}
+
+.sf-btn:hover {
+    background: var(--kgn-gray-200, #e5e7eb);
+    --pico-background-color: var(--kgn-gray-200, #e5e7eb);
+    color: var(--kgn-gray-800, #1f2937);
+    --pico-color: var(--kgn-gray-800, #1f2937);
+}
+
+.sf-btn-secondary {
+    color: var(--kgn-gray-500, #6b7280);
+}
+
+/* ── Filters panel ─────────────────────────────────────────────────── */
+
+.sf-filters {
+    margin-top: 0.5rem;
+    padding: 0.5rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.sf-filters.hidden {
+    display: none;
+}
+
+.sf-filter-group label {
+    font-size: var(--kgn-text-xs, 0.72rem);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--kgn-gray-500, #6b7280);
+    margin-bottom: 0.25rem;
+    display: block;
+}
+
+/* ── Chips ──────────────────────────────────────────────────────────── */
+
+.sf-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+}
+
+.sf-chip {
+    padding: 0.2rem 0.5rem;
+    font-size: var(--kgn-text-xs, 0.72rem);
+    border: 1px solid var(--chip-color, #aaa);
+    border-radius: 12px;
+    background: transparent;
+    color: var(--chip-color, #555);
+    cursor: pointer;
+    transition: background var(--kgn-ease-fast), color var(--kgn-ease-fast);
+    line-height: 1.4;
+    /* Reset Pico CSS button defaults for chips */
+    --pico-background-color: transparent;
+    --pico-border-color: var(--chip-color, #aaa);
+    --pico-color: var(--chip-color, #555);
+    box-shadow: none;
+}
+
+.sf-chip:hover {
+    background: color-mix(in srgb, var(--chip-color, #aaa) 15%, transparent);
+}
+
+.sf-chip.active {
+    background: var(--chip-color, #3b82f6);
+    color: #fff;
+    border-color: var(--chip-color, #3b82f6);
+}
+
+.sf-chip-tag {
+    --chip-color: #6366f1;
+}
+
+.sf-no-tags {
+    font-size: var(--kgn-text-xs, 0.72rem);
+    color: var(--kgn-gray-400, #9ca3af);
+    font-style: italic;
+}
+
+/* ── Active filter summary ─────────────────────────────────────────── */
+
+.sf-active-filters {
+    font-size: var(--kgn-text-xs, 0.72rem);
+    color: var(--kgn-gray-400, #9ca3af);
+    margin-top: 0.35rem;
+    min-height: 1em;
+}
+
+/* ── Responsive ────────────────────────────────────────────────────── */
+
+@media (max-width: 600px) {
+    .search-row {
+        flex-wrap: wrap;
+    }
+
+    .search-input-wrap {
+        width: 100%;
+    }
+}

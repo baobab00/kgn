@@ -1,0 +1,18 @@
+---
+kgn_version: "0.1"
+id: "new:auth-spec"
+type: SPEC
+title: "Collision Test — Same Slug"
+status: ACTIVE
+project_id: "proj-alpha"
+agent_id: "worker-agent-03"
+created_at: "2026-02-27T12:00:00+09:00"
+---
+
+## Context
+
+Collision file using the same `new:auth-spec` slug as node_a.kgn.
+
+## Content
+
+This file should be processed as FAILED (collision).
