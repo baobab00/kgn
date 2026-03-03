@@ -1,0 +1,19 @@
+---
+kgn_version: "0.1"
+id: "new:temp-decision-001"
+type: DECISION
+title: "Argon2 Adoption Decision"
+status: ACTIVE
+project_id: "proj-alpha"
+agent_id: "worker-agent-03"
+created_at: "2026-02-27T11:00:00+09:00"
+confidence: 0.85
+---
+
+## Context
+
+Decision on selecting a password hashing algorithm.
+
+## Content
+
+Adopt Argon2id instead of bcrypt.

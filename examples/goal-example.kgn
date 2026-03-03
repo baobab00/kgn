@@ -1,0 +1,36 @@
+---
+kgn_version: "0.1"
+id: "new:auth-goal"
+type: GOAL
+title: "Build User Authentication System"
+status: ACTIVE
+project_id: "example-project"
+agent_id: "example-agent"
+created_at: "2026-02-28T09:00:00+09:00"
+tags: ["auth", "security", "goal"]
+confidence: 0.95
+---
+
+## Context
+
+One of the core project goals: build a secure and scalable user authentication system.
+
+## Content
+
+- OAuth 2.0 social login support (Google, GitHub)
+- JWT-based session management (Access Token + Refresh Token)
+- Multi-factor authentication (MFA) option
+- Role-based access control (RBAC)
+
+## Rationale
+
+Authentication is the foundation of all services, so it is set as the first milestone.
+
+## Constraints
+
+- PII data must be stored on domestic servers only
+- OWASP Top 10 security guidelines compliance
+
+## Open Questions
+
+- SSO (Single Sign-On) integration scope

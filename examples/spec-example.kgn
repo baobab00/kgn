@@ -1,0 +1,37 @@
+---
+kgn_version: "0.1"
+id: "new:auth-spec"
+type: SPEC
+title: "OAuth 2.0 Authentication Flow Specification"
+status: ACTIVE
+project_id: "example-project"
+agent_id: "example-agent"
+created_at: "2026-02-28T09:30:00+09:00"
+tags: ["auth", "oauth", "spec"]
+confidence: 0.90
+---
+
+## Context
+
+Detailed technical specification for implementing the GOAL "Build User Authentication System".
+
+## Content
+
+- Authorization Code Flow with PKCE
+- Access Token validity: 15 minutes
+- Refresh Token validity: 7 days (with RTR)
+- Token storage: httpOnly Secure Cookie
+- Per-provider user information mapping table definition
+
+## Rationale
+
+Authorization Code Flow with PKCE is the most secure authentication method for SPA environments.
+
+## Constraints
+
+- Refresh Token Rotation (RTR) is mandatory
+- Rate Limiting: 5 login attempts per minute
+
+## Open Questions
+
+- Token blacklist storage (Redis vs DB)

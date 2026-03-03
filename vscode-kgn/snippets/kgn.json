@@ -1,0 +1,82 @@
+{
+  "kgn-node": {
+    "prefix": "kgn-node",
+    "description": "KGN node boilerplate with front matter and body sections",
+    "body": [
+      "---",
+      "kgn_version: \"1.0\"",
+      "id: \"new:${1:my-node}\"",
+      "type: ${2|GOAL,ARCH,SPEC,LOGIC,DECISION,ISSUE,TASK,CONSTRAINT,ASSUMPTION,SUMMARY|}",
+      "title: \"${3:Node Title}\"",
+      "status: ${4|ACTIVE,DEPRECATED,SUPERSEDED,ARCHIVED|}",
+      "project_id: \"${5:project-id}\"",
+      "agent_id: \"${6:agent-id}\"",
+      "created_at: \"${7:${CURRENT_YEAR}-${CURRENT_MONTH}-${CURRENT_DATE}T${CURRENT_HOUR}:${CURRENT_MINUTE}:${CURRENT_SECOND}Z}\"",
+      "tags: [${8}]",
+      "confidence: ${9:0.75}",
+      "---",
+      "",
+      "## Context",
+      "",
+      "${10:Describe the context here.}",
+      "",
+      "## Decision",
+      "",
+      "${11:Describe the decision here.}",
+      "",
+      "## Rationale",
+      "",
+      "${12:Explain the rationale.}",
+      "",
+      "## Consequences",
+      "",
+      "${13:List consequences.}",
+      "",
+      "## References",
+      "",
+      "- ${14:reference}",
+      ""
+    ]
+  },
+  "kgn-task": {
+    "prefix": "kgn-task",
+    "description": "KGN TASK node boilerplate",
+    "body": [
+      "---",
+      "kgn_version: \"1.0\"",
+      "id: \"new:${1:task-slug}\"",
+      "type: TASK",
+      "title: \"${2:Task Title}\"",
+      "status: ACTIVE",
+      "project_id: \"${3:project-id}\"",
+      "agent_id: \"${4:agent-id}\"",
+      "created_at: \"${5:${CURRENT_YEAR}-${CURRENT_MONTH}-${CURRENT_DATE}T${CURRENT_HOUR}:${CURRENT_MINUTE}:${CURRENT_SECOND}Z}\"",
+      "tags: [${6}]",
+      "confidence: ${7:0.5}",
+      "---",
+      "",
+      "## Context",
+      "",
+      "${8:What needs to be done and why.}",
+      "",
+      "## Decision",
+      "",
+      "${9:How to approach this task.}",
+      "",
+      "## Consequences",
+      "",
+      "${10:Expected outcomes.}",
+      ""
+    ]
+  },
+  "kgn-section": {
+    "prefix": "kgn-section",
+    "description": "Standard KGN body section heading",
+    "body": [
+      "## ${1|Context,Decision,Rationale,Consequences,References|}",
+      "",
+      "${2:Content}",
+      ""
+    ]
+  }
+}

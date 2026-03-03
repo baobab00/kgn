@@ -1,0 +1,13 @@
+---
+kgn_version: "0.1"
+id: "770e8400-e29b-41d4-a716-446655440000"
+type: LOGIC
+title: "Node Without Sections"
+status: ACTIVE
+project_id: "proj-alpha"
+agent_id: "worker-agent-03"
+created_at: "2026-02-27T12:00:00+09:00"
+---
+
+This file has no recommended sections (Context, Content).
+A V10 warning should be raised.

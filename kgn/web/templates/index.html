@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KGN — {{ project_name }}</title>
+    <!-- Pico CSS — R13: no build tools, CDN only -->
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/css/graph.css">
+    <link rel="stylesheet" href="/static/css/detail.css">
+    <link rel="stylesheet" href="/static/css/kanban.css">
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link rel="stylesheet" href="/static/css/agents.css">
+    <link rel="stylesheet" href="/static/css/search.css">
+    <style>
+        /* ── Pico CSS overrides (scoped to KGN) ──────────────── */
+
+        /* Reset Pico CSS button defaults for nav-tabs */
+        .nav-tabs button {
+            --pico-background-color: transparent;
+            --pico-border-color: transparent;
+            --pico-color: var(--kgn-gray-500, #6b7280);
+            box-shadow: none;
+            outline: none;
+            border-radius: 0;
+        }
+        .nav-tabs button:hover {
+            --pico-background-color: transparent;
+            --pico-border-color: transparent;
+        }
+        .nav-tabs button.active {
+            --pico-background-color: transparent;
+            --pico-border-color: transparent;
+            --pico-color: var(--kgn-primary, #3b82f6);
+        }
+        .nav-tabs button:focus {
+            --pico-background-color: transparent;
+            box-shadow: none;
+        }
+
+        /* Reset Pico CSS for toolbar buttons */
+        #graph-toolbar button {
+            --pico-background-color: var(--kgn-primary-light, #eff6ff);
+            --pico-border-color: var(--kgn-primary, #3b82f6);
+            --pico-color: var(--kgn-primary, #3b82f6);
+            font-weight: 600;
+            border-radius: var(--kgn-radius-sm, 6px);
+            font-size: var(--kgn-text-sm, 0.82rem);
+            padding: 0.3rem 0.75rem;
+        }
+        #graph-toolbar button:hover {
+            --pico-background-color: var(--kgn-primary, #3b82f6);
+            --pico-color: #fff;
+        }
+        #btn-similar, #btn-conflicts {
+            --pico-background-color: #fef2f2 !important;
+            --pico-border-color: var(--kgn-danger, #ef4444) !important;
+            --pico-color: var(--kgn-danger, #ef4444) !important;
+        }
+        #btn-similar:hover, #btn-conflicts:hover {
+            --pico-background-color: var(--kgn-danger, #ef4444) !important;
+            --pico-color: #fff !important;
+        }
+
+        /* Reset Pico CSS for toolbar selects */
+        #graph-toolbar select {
+            --pico-border-color: var(--kgn-gray-300, #d1d5db);
+            padding: 0.3rem 0.5rem;
+            font-size: var(--kgn-text-sm, 0.82rem);
+            height: auto;
+            margin: 0;
+        }
+
+        /* Fix search input: prevent Pico search icon overlap */
+        .search-input-wrap input[type="search"] {
+            -webkit-appearance: textfield;
+            appearance: textfield;
+            background-image: none !important;
+            padding-left: 0.5rem;
+        }
+        .search-input-wrap input[type="search"]::-webkit-search-decoration,
+        .search-input-wrap input[type="search"]::-webkit-search-cancel-button {
+            -webkit-appearance: none;
+        }
+
+        /* ── Header ─────────────────────────────────────────── */
+        header.kgn-header {
+            background: linear-gradient(135deg, var(--kgn-primary, #3b82f6), var(--kgn-primary-hover, #2563eb));
+            color: #fff;
+            padding: 0.5rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+        header.kgn-header h1 {
+            margin: 0;
+            font-size: var(--kgn-text-xl, 1.15rem);
+            font-weight: 700;
+            letter-spacing: -0.01em;
+        }
+        header.kgn-header .version {
+            opacity: 0.8;
+            font-size: var(--kgn-text-xs, 0.72rem);
+            background: rgba(255,255,255,0.15);
+            padding: 0.15rem 0.5rem;
+            border-radius: 10px;
+        }
+
+        /* ── Overview tab ───────────────────────────────────── */
+        #overview-view {
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 1.5rem;
+            padding-bottom: 3rem;
+        }
+        #health-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+        .health-card {
+            background: var(--kgn-surface, #fff);
+            border: 1px solid var(--kgn-border, #e5e7eb);
+            border-radius: var(--kgn-radius, 10px);
+            padding: 0.85rem;
+            text-align: center;
+            transition: box-shadow var(--kgn-ease, 0.2s ease),
+                        transform var(--kgn-ease, 0.2s ease);
+        }
+        .health-card:hover {
+            box-shadow: var(--kgn-shadow-sm, 0 1px 3px rgba(0,0,0,0.06));
+            transform: translateY(-1px);
+        }
+        .health-card .value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--kgn-primary);
+            line-height: 1.2;
+        }
+        .health-card .label {
+            font-size: var(--kgn-text-xs, 0.72rem);
+            color: var(--kgn-gray-500, #6b7280);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-top: 0.2rem;
+        }
+        .health-card.warn .value { color: var(--kgn-warning); }
+        .health-card.danger .value { color: var(--kgn-danger); }
+        .health-card.ok .value { color: var(--kgn-success); }
+
+        /* ── Node list ──────────────────────────────────────── */
+        #node-list { list-style: none !important; padding: 0; margin: 0; }
+        #node-list li {
+            list-style: none !important;
+            background: var(--kgn-surface, #fff);
+            border: 1px solid var(--kgn-border, #e5e7eb);
+            border-radius: var(--kgn-radius-sm, 6px);
+            padding: 0.6rem 0.85rem;
+            margin-bottom: 0.4rem;
+            cursor: pointer;
+            transition: box-shadow var(--kgn-ease-fast), border-color var(--kgn-ease-fast),
+                        transform var(--kgn-ease-fast);
+        }
+        #node-list li::before { display: none !important; }
+        #node-list li::marker { content: none !important; font-size: 0; }
+        #node-list li:hover {
+            border-color: var(--kgn-primary, #3b82f6);
+            box-shadow: var(--kgn-shadow-sm);
+            transform: translateX(2px);
+        }
+        #node-list li .node-type {
+            display: inline-block;
+            color: #fff;
+            border-radius: var(--kgn-radius-xs, 4px);
+            padding: 0.1rem 0.4rem;
+            font-size: var(--kgn-text-xs, 0.72rem);
+            font-weight: 600;
+            margin-right: 0.4rem;
+            letter-spacing: 0.02em;
+        }
+        #node-list li .node-status {
+            font-size: var(--kgn-text-xs, 0.72rem);
+            color: var(--kgn-gray-400, #9ca3af);
+        }
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--kgn-gray-400, #9ca3af);
+        }
+
+        /* ── Toast notifications ─────────────────────────────── */
+        #toast-container {
+            position: fixed; top: 60px; right: 1rem;
+            z-index: 9999; display: flex; flex-direction: column; gap: 0.5rem;
+            pointer-events: none;
+        }
+        .kgn-toast {
+            pointer-events: auto;
+            padding: 0.65rem 1.1rem; border-radius: var(--kgn-radius-sm, 6px);
+            font-size: var(--kgn-text-sm, 0.82rem); font-weight: 500;
+            box-shadow: var(--kgn-shadow-lg);
+            animation: toastIn 0.3s ease-out;
+            max-width: 360px;
+            backdrop-filter: blur(8px);
+        }
+        .kgn-toast.info    { background: #eff6ffee; color: #1d4ed8; border: 1px solid #93c5fd; }
+        .kgn-toast.success { background: #f0fdf4ee; color: #166534; border: 1px solid #86efac; }
+        .kgn-toast.warn    { background: #fffbebee; color: #92400e; border: 1px solid #fcd34d; }
+        .kgn-toast.error   { background: #fef2f2ee; color: #991b1b; border: 1px solid #fca5a5; }
+        @keyframes toastIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateX(40px); } }
+
+        /* ── Toolbar dropdown panels ─────────────────────────── */
+        .toolbar-dropdown-wrap { position: relative; display: inline-block; }
+        .toolbar-dropdown {
+            display: none; position: absolute; top: calc(100% + 6px); right: 0;
+            background: var(--kgn-surface, #fff);
+            border: 1px solid var(--kgn-border, #e5e7eb);
+            border-radius: var(--kgn-radius, 10px);
+            padding: 0.75rem 1rem; min-width: 300px; max-width: 380px;
+            max-height: 350px; overflow-y: auto; z-index: 100;
+            box-shadow: var(--kgn-shadow-lg);
+            font-size: var(--kgn-text-sm, 0.82rem);
+        }
+        .toolbar-dropdown.open { display: block; }
+        .toolbar-dropdown h4 { margin: 0 0 0.5rem 0; font-size: var(--kgn-text-base, 0.9rem); font-weight: 700; }
+        .toolbar-dropdown .dd-close {
+            float: right; cursor: pointer; color: var(--kgn-gray-400, #999); font-size: 1.1rem;
+            line-height: 1; margin-left: 0.5rem;
+            transition: color var(--kgn-ease-fast);
+        }
+        .toolbar-dropdown .dd-close:hover { color: var(--kgn-gray-700, #333); }
+        .dd-sim-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0.35rem 0.25rem; border-bottom: 1px solid var(--kgn-gray-100, #f3f4f6);
+            cursor: pointer; border-radius: var(--kgn-radius-xs);
+            transition: background var(--kgn-ease-fast);
+        }
+        .dd-sim-item:last-child { border-bottom: none; }
+        .dd-sim-item:hover { background: var(--kgn-primary-light, #eff6ff); }
+        .dd-sim-score {
+            font-weight: 600; color: #DAA520;
+            font-size: var(--kgn-text-xs, 0.72rem);
+            min-width: 3.5em; text-align: right;
+        }
+        .dd-conflict-item {
+            padding: 0.35rem 0; border-bottom: 1px solid var(--kgn-gray-100, #f3f4f6);
+            font-size: var(--kgn-text-xs, 0.72rem);
+        }
+        .dd-conflict-item:last-child { border-bottom: none; }
+        .dd-conflict-status {
+            display: inline-block; padding: 0.1rem 0.35rem; border-radius: 3px;
+            font-size: 0.65rem; font-weight: 600;
+        }
+        .dd-conflict-status.NEW { background: #fef2f2; color: var(--kgn-danger); }
+        .dd-conflict-status.PENDING { background: #fffbeb; color: #d97706; }
+    </style>
+</head>
+<body>
+    <div id="toast-container"></div>
+    <header class="kgn-header">
+        <h1>KGN — {{ project_name }}</h1>
+        <span class="version">v{{ version }}</span>
+    </header>
+
+    <!-- Tab navigation -->
+    <nav class="nav-tabs">
+        <button class="active" data-tab="overview">Overview</button>
+        <button data-tab="graph">Graph</button>
+        <button data-tab="kanban">Tasks</button>
+        <button data-tab="agents">Agents</button>
+        <button data-tab="dashboard">Dashboard</button>
+    </nav>
+
+    <!-- ── Overview tab ──────────────────────────────────────── -->
+    <div id="overview-view" class="view-container active" data-view="overview">
+        <h2>Health</h2>
+        <div id="health-cards"><p class="loading">Loading…</p></div>
+
+        <h2>Nodes</h2>
+        <div style="margin-bottom:0.75rem; display:flex; gap:0.5rem;">
+            <select id="filter-type" aria-label="Type filter">
+                <option value="">All Types</option>
+            </select>
+            <select id="filter-status" aria-label="Status filter">
+                <option value="">All Statuses</option>
+            </select>
+        </div>
+        <ul id="node-list"><li class="loading">Loading…</li></ul>
+        <div id="node-list-pagination" style="display:flex;justify-content:center;gap:0.5rem;padding:0.5rem 0;"></div>
+    </div>
+
+    <!-- ── Graph tab ─────────────────────────────────────────── -->
+    <div id="graph-view" class="view-container" data-view="graph">
+        <div id="search-filter-bar"></div>
+        <div id="graph-toolbar">
+            <label for="graph-root">Root:</label>
+            <select id="graph-root" style="min-width:200px;"></select>
+            <label for="graph-depth">Depth:</label>
+            <select id="graph-depth">
+                <option value="1">1</option>
+                <option value="2" selected>2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+            </select>
+            <label for="graph-layout">Layout:</label>
+            <select id="graph-layout">
+                <option value="dagre" selected>Dagre (DAG)</option>
+                <option value="cola">Cola (Force)</option>
+                <option value="concentric">Concentric</option>
+                <option value="circle">Circle</option>
+            </select>
+            <button id="btn-reload">Reload</button>
+            <button id="btn-fit">Fit</button>
+            <span class="toolbar-dropdown-wrap">
+                <button id="btn-similar" title="Show similar nodes for selected node">Similar</button>
+                <div id="similar-dropdown" class="toolbar-dropdown"></div>
+            </span>
+            <span class="toolbar-dropdown-wrap">
+                <button id="btn-conflicts" title="Show conflict candidates">Conflicts</button>
+                <div id="conflict-dropdown" class="toolbar-dropdown"></div>
+            </span>
+        </div>
+        <div id="truncation-warning"></div>
+        <div id="graph-content">
+            <div id="cy"></div>
+            <aside id="detail-panel">
+                <button class="close-btn" id="detail-close">&times;</button>
+                <h3 id="detail-title"></h3>
+                <dl id="detail-meta"></dl>
+                <div id="detail-body"></div>
+                <div id="detail-edges"></div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- ── Kanban tab ──────────────────────────────────────────── -->
+    <div id="kanban-view" class="view-container" data-view="kanban">
+        <div id="kanban-container"></div>
+    </div>
+
+    <!-- ── Agents tab ──────────────────────────────────────────── -->
+    <div id="agents-view" class="view-container" data-view="agents">
+        <div id="agents-container"></div>
+    </div>
+
+    <!-- ── Dashboard tab ───────────────────────────────────────── -->
+    <div id="dashboard-view" class="view-container" data-view="dashboard">
+        <div id="dashboard-container"></div>
+    </div>
+
+    <!-- ── CDN scripts (R13: no build tools) ──────────────────── -->
+    <script src="https://cdn.jsdelivr.net/npm/cytoscape@3/dist/cytoscape.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dagre@0.8.5/dist/dagre.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cytoscape-dagre@2/cytoscape-dagre.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/webcola/WebCola/cola.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cytoscape-cola@2/cytoscape-cola.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked@15/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+    <script src="/static/js/graph.js"></script>
+    <script src="/static/js/detail-panel.js"></script>
+    <script src="/static/js/kanban.js"></script>
+    <script src="/static/js/dashboard.js"></script>
+    <script src="/static/js/agents.js"></script>
+    <script src="/static/js/search.js"></script>
+
+    <script>
+    /* ── KGN Web — main application logic ── */
+    const API = '/api/v1';
+    let _nodesCache = [];
+    let _graph = null;
+    let _detailPanel = null;
+    let _kanban = null;
+    let _agents = null;
+    let _dashboard = null;
+
+    // ── Tab navigation ────────────────────────────────────────────────
+    document.querySelectorAll('.nav-tabs button').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.nav-tabs button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.querySelectorAll('.view-container').forEach(v => v.classList.remove('active'));
+            const target = document.querySelector(`[data-view="${btn.dataset.tab}"]`);
+            if (target) target.classList.add('active');
+
+            // Init graph on first visit
+            if (btn.dataset.tab === 'graph' && !_graph) {
+                initGraph();
+            }
+            // Init kanban on first visit
+            if (btn.dataset.tab === 'kanban' && !_kanban) {
+                initKanban();
+            }
+            // Init agents on first visit
+            if (btn.dataset.tab === 'agents' && !_agents) {
+                initAgents();
+            }
+            // Init dashboard on first visit
+            if (btn.dataset.tab === 'dashboard' && !_dashboard) {
+                initDashboard();
+            }
+        });
+    });
+
+    // ── Overview: Health ───────────────────────────────────────────────
+    async function fetchHealth() {
+        const res = await fetch(`${API}/health`);
+        const data = await res.json();
+        const el = document.getElementById('health-cards');
+        const orphanPct = (data.orphan_rate * 100).toFixed(1);
+        const cards = [
+            { label: 'Total Nodes', value: data.total_nodes, cls: '' },
+            { label: 'Total Edges', value: data.total_edges, cls: '' },
+            { label: 'Active Nodes', value: data.active_nodes, cls: 'ok' },
+            { label: 'Orphan Rate', value: orphanPct + '%', cls: data.orphan_rate > 0.2 ? 'danger' : data.orphan_rate > 0.1 ? 'warn' : 'ok' },
+            { label: 'Conflicts', value: data.conflict_count, cls: data.conflict_count > 0 ? 'danger' : 'ok' },
+            { label: 'WIP Tasks', value: data.wip_tasks, cls: data.wip_tasks > 0 ? 'warn' : '' },
+        ];
+        el.innerHTML = cards.map(c =>
+            `<div class="health-card ${c.cls}">
+                <div class="value">${c.value}</div>
+                <div class="label">${c.label}</div>
+            </div>`
+        ).join('');
+    }
+
+    // ── Overview: Nodes list ──────────────────────────────────────────
+    const NODES_PER_PAGE = 50;
+    let _nodePage = 0;
+    let _nodeTotal = 0;
+
+    async function fetchNodes(page) {
+        if (page === undefined) page = 0;
+        _nodePage = page;
+        const type = document.getElementById('filter-type').value;
+        const status = document.getElementById('filter-status').value;
+        const params = new URLSearchParams();
+        if (type) params.set('type', type);
+        if (status) params.set('status', status);
+        params.set('limit', NODES_PER_PAGE);
+        params.set('offset', page * NODES_PER_PAGE);
+        const res = await fetch(`${API}/nodes?${params}`);
+        const data = await res.json();
+        _nodesCache = data.nodes;
+        _nodeTotal = data.total;
+        const el = document.getElementById('node-list');
+        if (data.nodes.length === 0) {
+            el.innerHTML = '<li>No nodes found.</li>';
+            _renderPagination(0, 0);
+            return;
+        }
+        el.innerHTML = data.nodes.map(n => {
+            const bgColor = window.TYPE_COLORS[n.type] || '#888';
+            return `<li data-node-id="${n.id}" onclick="navigateToNode('${n.id}')">
+                <span class="node-type" style="background:${bgColor}">${n.type}</span>
+                <strong>${_esc(n.title)}</strong>
+                <span class="node-status">${n.status}</span>
+                <br><small>${n.id.substring(0, 12)}…</small>
+            </li>`;
+        }).join('');
+        _renderPagination(_nodeTotal, page);
+    }
+
+    function _renderPagination(total, currentPage) {
+        const el = document.getElementById('node-list-pagination');
+        if (!el) return;
+        const totalPages = Math.ceil(total / NODES_PER_PAGE);
+        if (totalPages <= 1) { el.innerHTML = ''; return; }
+        let html = '';
+        if (currentPage > 0) {
+            html += `<button onclick="fetchNodes(${currentPage - 1})" style="font-size:0.8rem;padding:0.2rem 0.5rem;">← Prev</button>`;
+        }
+        html += `<span style="font-size:0.8rem;line-height:2;">${currentPage + 1} / ${totalPages} (${total} nodes)</span>`;
+        if (currentPage < totalPages - 1) {
+            html += `<button onclick="fetchNodes(${currentPage + 1})" style="font-size:0.8rem;padding:0.2rem 0.5rem;">Next →</button>`;
+        }
+        el.innerHTML = html;
+    }
+
+    function _esc(s) {
+        const d = document.createElement('div');
+        d.textContent = s;
+        return d.innerHTML;
+    }
+
+    /** Navigate from node list to graph view */
+    function navigateToNode(nodeId) {
+        // Switch to graph tab
+        document.querySelectorAll('.nav-tabs button').forEach(b => b.classList.remove('active'));
+        document.querySelector('[data-tab="graph"]').classList.add('active');
+        document.querySelectorAll('.view-container').forEach(v => v.classList.remove('active'));
+        document.getElementById('graph-view').classList.add('active');
+
+        if (!_graph) {
+            initGraph(nodeId);
+        } else {
+            // Sync root dropdown
+            const rootSel = document.getElementById('graph-root');
+            if (rootSel) rootSel.value = nodeId;
+            _graph.load(nodeId, parseInt(document.getElementById('graph-depth').value));
+        }
+    }
+    window.navigateToNode = navigateToNode;
+
+    // ── Graph view ────────────────────────────────────────────────────
+
+    async function initGraph(initialNodeId) {
+        _graph = new window.KgnGraph('cy');
+        _graph.init();
+
+        // Search filter bar
+        const _filterBar = new window.SearchFilterBar('search-filter-bar', {
+            onFilter: (filters) => {
+                window.applyGraphFilter(_graph.cy, filters);
+            },
+        });
+        _filterBar.render();
+
+        // Collect tags from all nodes (fetched for root selector)
+        const allTags = await populateRootSelector();
+        _filterBar.setTags(allTags);
+
+        // Detail panel
+        _detailPanel = new window.DetailPanel({
+            panel: document.getElementById('detail-panel'),
+            onNavigate: (nodeId) => {
+                if (_graph.loadedNodeIds.has(nodeId)) {
+                    _graph.focusNode(nodeId);
+                    _detailPanel.show(nodeId);
+                } else {
+                    _graph.load(nodeId, parseInt(document.getElementById('graph-depth').value));
+                    _detailPanel.show(nodeId);
+                }
+            },
+        });
+
+        // Node select → detail panel
+        _graph.onNodeSelect((nodeData) => _detailPanel.show(nodeData.id));
+
+        // Populate root selector from cached nodes
+        populateRootSelector();
+
+        // Toolbar events
+        document.getElementById('btn-reload').addEventListener('click', () => {
+            const rootId = document.getElementById('graph-root').value;
+            const depth = parseInt(document.getElementById('graph-depth').value);
+            if (rootId) _graph.load(rootId, depth);
+        });
+
+        document.getElementById('btn-fit').addEventListener('click', () => {
+            if (_graph.cy) _graph.cy.fit(null, 30);
+        });
+
+        document.getElementById('graph-layout').addEventListener('change', (e) => {
+            _graph.applyLayout(e.target.value);
+        });
+
+        document.getElementById('graph-root').addEventListener('change', (e) => {
+            const depth = parseInt(document.getElementById('graph-depth').value);
+            if (e.target.value) {
+                _graph.load(e.target.value, depth).then(() => {
+                    // Ensure detail panel opens even if load() callback missed
+                    if (_detailPanel) _detailPanel.show(e.target.value);
+                });
+            }
+        });
+
+        document.getElementById('detail-close').addEventListener('click', () => {
+            _detailPanel.close();
+        });
+
+        // Similar nodes button
+        document.getElementById('btn-similar').addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const selected = _graph.cy.$('node:selected');
+            if (selected.length === 0) {
+                _toast('Select a node first', 'warn');
+                return;
+            }
+            const nodeId = selected.first().data('id');
+            try {
+                const res = await fetch(`${API}/similar/${nodeId}?top_k=10`);
+                if (!res.ok) { _toast('Failed to search similar nodes', 'error'); return; }
+                const data = await res.json();
+                if (data.results.length === 0) {
+                    _toast('No embeddings found — run <code>kgn embed</code> first', 'warn', 4000);
+                    return;
+                }
+                window.highlightSimilar(_graph.cy, data.results);
+                _showSimilarDropdown(data.results);
+            } catch (err) {
+                console.error('Similar fetch error:', err);
+                _toast('Failed to search similar nodes', 'error');
+            }
+        });
+
+        // Conflicts button
+        document.getElementById('btn-conflicts').addEventListener('click', async (e) => {
+            e.stopPropagation();
+            try {
+                const res = await fetch(`${API}/conflicts`);
+                if (!res.ok) return;
+                const data = await res.json();
+                if (data.conflicts.length === 0) {
+                    _toast('No conflicts found', 'success');
+                    return;
+                }
+                window.showConflicts(_graph.cy, data.conflicts);
+                _showConflictDropdown(data.conflicts);
+            } catch (err) {
+                console.error('Conflicts fetch error:', err);
+                _toast('Failed to load conflicts', 'error');
+            }
+        });
+
+        // Load initial node
+        const startId = initialNodeId || document.getElementById('graph-root').value;
+        if (startId) {
+            const depth = parseInt(document.getElementById('graph-depth').value);
+            _graph.load(startId, depth);
+        }
+    }
+
+    async function populateRootSelector() {
+        const sel = document.getElementById('graph-root');
+        sel.innerHTML = '<option value="">Select node…</option>';
+        try {
+            const res = await fetch(`${API}/nodes?limit=1000`);
+            const data = await res.json();
+            data.nodes.forEach(n => {
+                const opt = document.createElement('option');
+                opt.value = n.id;
+                opt.textContent = `[${n.type}] ${n.title.substring(0, 40)}`;
+                sel.appendChild(opt);
+            });
+            // Also refresh filter bar tags
+            const allTags = [];
+            data.nodes.forEach(n => { if (n.tags) allTags.push(...n.tags); });
+            return allTags;
+        } catch (e) {
+            console.error('Failed to populate root selector:', e);
+            return [];
+        }
+    }
+
+    // ── Node detail panel (now handled by DetailPanel class) ─────────
+
+    // ── Kanban board ─────────────────────────────────────────────────
+
+    function initKanban() {
+        _kanban = new window.KanbanBoard('kanban-container', {
+            onCardClick: (task) => {
+                // Switch to graph tab and navigate to task node
+                navigateToNode(task.task_node_id);
+            },
+        });
+        _kanban.load();
+    }
+
+    // ── Agents ──────────────────────────────────────────────────────
+
+    function initAgents() {
+        _agents = new window.AgentsView('agents-container');
+        window._agentsView = _agents;
+        _agents.load();
+    }
+
+    // ── Dashboard ────────────────────────────────────────────────────
+
+    function initDashboard() {
+        _dashboard = new window.DashboardView('dashboard-container');
+        _dashboard.load();
+    }
+
+    // ── Toast notification system ───────────────────────────────────
+
+    function _toast(message, type = 'info', duration = 3000) {
+        const container = document.getElementById('toast-container');
+        const el = document.createElement('div');
+        el.className = `kgn-toast ${type}`;
+        el.innerHTML = message;
+        container.appendChild(el);
+        setTimeout(() => {
+            el.style.animation = 'toastOut 0.3s ease-in forwards';
+            setTimeout(() => el.remove(), 300);
+        }, duration);
+    }
+
+    // ── Dropdown panels for Similar / Conflicts ─────────────────────
+
+    function _closeAllDropdowns() {
+        document.querySelectorAll('.toolbar-dropdown.open').forEach(d => d.classList.remove('open'));
+        // Clear similar highlights when closing
+        if (_graph && _graph.cy) {
+            window.clearSimilarHighlight && window.clearSimilarHighlight(_graph.cy);
+            window.clearConflicts && window.clearConflicts(_graph.cy);
+        }
+    }
+
+    function _showSimilarDropdown(results) {
+        _closeAllDropdowns();
+        const dd = document.getElementById('similar-dropdown');
+        dd.innerHTML = `
+            <span class="dd-close" onclick="this.parentElement.classList.remove('open');window.clearSimilarHighlight(_graph&&_graph.cy)">&times;</span>
+            <h4 style="color:#DAA520;">Similar Nodes</h4>
+            ${results.map(r => `<div class="dd-sim-item" onclick="navigateToNode('${r.id}')">
+                <span>${_esc(r.title)}</span>
+                <span class="dd-sim-score">${(r.similarity*100).toFixed(1)}%</span>
+            </div>`).join('')}
+        `;
+        dd.classList.add('open');
+    }
+
+    function _showConflictDropdown(conflicts) {
+        _closeAllDropdowns();
+        const dd = document.getElementById('conflict-dropdown');
+        dd.innerHTML = `
+            <span class="dd-close" onclick="this.parentElement.classList.remove('open');window.clearConflicts(_graph&&_graph.cy)">&times;</span>
+            <h4 style="color:#ef4444;">⚠ Conflicts (${conflicts.length})</h4>
+            ${conflicts.map(c => `<div class="dd-conflict-item">
+                <span>${_esc(c.node_a_title)}</span> ↔ <span>${_esc(c.node_b_title)}</span>
+                <span class="dd-conflict-status ${c.status}">${c.status}</span>
+                <small>${(c.similarity*100).toFixed(1)}%</small>
+            </div>`).join('')}
+        `;
+        dd.classList.add('open');
+    }
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.toolbar-dropdown-wrap')) {
+            _closeAllDropdowns();
+        }
+    });
+
+    // ── Filter population ─────────────────────────────────────────────
+    const TYPES = ['GOAL','SPEC','ARCH','LOGIC','DECISION','ISSUE','TASK','CONSTRAINT','ASSUMPTION','SUMMARY'];
+    const STATUSES = ['ACTIVE','DEPRECATED','SUPERSEDED','ARCHIVED'];
+
+    function populateFilters() {
+        const te = document.getElementById('filter-type');
+        TYPES.forEach(t => { const o = document.createElement('option'); o.value = t; o.textContent = t; te.appendChild(o); });
+        const se = document.getElementById('filter-status');
+        STATUSES.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; se.appendChild(o); });
+    }
+
+    document.getElementById('filter-type').addEventListener('change', () => fetchNodes(0));
+    document.getElementById('filter-status').addEventListener('change', () => fetchNodes(0));
+
+    // ── Init ──────────────────────────────────────────────────────────
+    populateFilters();
+    fetchHealth();
+    fetchNodes();
+    </script>
+</body>
+</html>

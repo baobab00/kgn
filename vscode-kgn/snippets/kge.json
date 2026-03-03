@@ -1,0 +1,20 @@
+{
+  "kgn-edge": {
+    "prefix": "kgn-edge",
+    "description": "KGE edge file boilerplate",
+    "body": [
+      "---",
+      "kgn_version: \"1.0\"",
+      "project_id: \"${1:project-id}\"",
+      "agent_id: \"${2:agent-id}\"",
+      "created_at: \"${3:${CURRENT_YEAR}-${CURRENT_MONTH}-${CURRENT_DATE}T${CURRENT_HOUR}:${CURRENT_MINUTE}:${CURRENT_SECOND}Z}\"",
+      "edges:",
+      "  - from: \"${4:source-node-id}\"",
+      "    to: \"${5:target-node-id}\"",
+      "    type: ${6|DEPENDS_ON,IMPLEMENTS,RESOLVES,SUPERSEDES,DERIVED_FROM,CONTRADICTS,CONSTRAINED_BY|}",
+      "    note: \"${7:Edge description}\"",
+      "---",
+      ""
+    ]
+  }
+}

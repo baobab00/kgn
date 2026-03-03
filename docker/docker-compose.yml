@@ -1,0 +1,40 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: kgn-postgres
+    environment:
+      POSTGRES_DB: kgn
+      POSTGRES_USER: kgn
+      POSTGRES_PASSWORD: kgn_dev_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - kgn_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kgn -d kgn"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  kgn:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: kgn-cli
+    environment:
+      KGN_DB_HOST: postgres
+      KGN_DB_PORT: "5432"
+      KGN_DB_NAME: kgn
+      KGN_DB_USER: kgn
+      KGN_DB_PASSWORD: kgn_dev_password
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./workspace:/home/kgn/workspace
+    working_dir: /home/kgn/workspace
+    # Override ENTRYPOINT to keep container running for exec usage
+    entrypoint: ["sleep", "infinity"]
+
+volumes:
+  kgn_pgdata:

@@ -1,0 +1,15 @@
+---
+kgn_version: "0.1"
+project_id: "proj-alpha"
+agent_id: "worker-agent-03"
+created_at: "2026-02-27T10:00:00+09:00"
+edges:
+  - from: "550e8400-e29b-41d4-a716-446655440000"
+    to:   "450e8400-e29b-41d4-a716-446655440001"
+    type: IMPLEMENTS
+    note: "This SPEC implements the ARCH decision"
+
+  - from: "550e8400-e29b-41d4-a716-446655440000"
+    to:   "350e8400-e29b-41d4-a716-446655440002"
+    type: DEPENDS_ON
+---

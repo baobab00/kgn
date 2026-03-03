@@ -1,0 +1,123 @@
+{
+  "name": "vscode-kgn",
+  "displayName": "KGN — Knowledge Graph Node",
+  "description": "Syntax highlighting, validation, and IDE support for .kgn and .kge files",
+  "version": "0.1.0",
+  "publisher": "kgn-project",
+  "license": "MIT",
+  "icon": "icons/kgn-icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/baobab00/kgn"
+  },
+  "bugs": {
+    "url": "https://github.com/baobab00/kgn/issues"
+  },
+  "homepage": "https://github.com/baobab00/kgn#readme",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters",
+    "Formatters"
+  ],
+  "activationEvents": [
+    "onLanguage:kgn",
+    "onLanguage:kge",
+    "onCommand:kgn.showGraphPreview"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "kgn",
+        "aliases": ["KGN Node", "kgn"],
+        "extensions": [".kgn"],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icons/kgn-icon.svg",
+          "dark": "./icons/kgn-icon.svg"
+        }
+      },
+      {
+        "id": "kge",
+        "aliases": ["KGN Edge", "kge"],
+        "extensions": [".kge"],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icons/kge-icon.svg",
+          "dark": "./icons/kge-icon.svg"
+        }
+      }
+    ],
+    "grammars": [
+      {
+        "language": "kgn",
+        "scopeName": "source.kgn",
+        "path": "./syntaxes/kgn.tmLanguage.json"
+      },
+      {
+        "language": "kge",
+        "scopeName": "source.kge",
+        "path": "./syntaxes/kge.tmLanguage.json"
+      }
+    ],
+    "configuration": {
+      "title": "KGN",
+      "properties": {
+        "kgn.pythonPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the Python interpreter with kgn[lsp] installed. Leave empty for auto-detection.",
+          "scope": "machine-overridable"
+        },
+        "kgn.lsp.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable the KGN Language Server for advanced features (diagnostics, completion, hover)."
+        },
+        "kgn.trace.server": {
+          "type": "string",
+          "enum": ["off", "messages", "verbose"],
+          "default": "off",
+          "description": "Trace communication between VS Code and the KGN language server."
+        }
+      }
+    },
+    "snippets": [
+      {
+        "language": "kgn",
+        "path": "./snippets/kgn.json"
+      },
+      {
+        "language": "kge",
+        "path": "./snippets/kge.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "kgn.showGraphPreview",
+        "title": "KGN: Show Graph Preview",
+        "icon": "$(type-hierarchy)"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.90.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.5.0",
+    "eslint": "^9.0.0",
+    "@vscode/vsce": "^3.0.0"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.0"
+  }
+}

@@ -1,0 +1,186 @@
+/* ── KGN Web — Dashboard styles ─────────────────────────────────── */
+
+/* ── Stat cards ──────────────────────────────────────────────────── */
+.dash-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.dash-card {
+    background: var(--kgn-surface, #fff);
+    border: 1px solid var(--kgn-border, #e5e7eb);
+    border-radius: var(--kgn-radius, 10px);
+    padding: 1rem;
+    text-align: center;
+    transition: box-shadow var(--kgn-ease, 0.2s ease),
+                transform var(--kgn-ease, 0.2s ease);
+}
+
+.dash-card:hover {
+    box-shadow: var(--kgn-shadow-sm, 0 1px 3px rgba(0,0,0,0.06));
+    transform: translateY(-1px);
+}
+
+.dash-card-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--kgn-primary, #3b82f6);
+    line-height: 1.2;
+}
+
+.dash-card-nodes .dash-card-value  { color: var(--kgn-primary, #3b82f6); }
+.dash-card-edges .dash-card-value  { color: #8b5cf6; }
+.dash-card-active .dash-card-value { color: var(--kgn-success, #22c55e); }
+.dash-card-tasks .dash-card-value  { color: var(--kgn-warning, #f59e0b); }
+
+.dash-card-label {
+    font-size: var(--kgn-text-xs, 0.72rem);
+    color: var(--kgn-gray-500, #6b7280);
+    margin-top: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* ── Health index bar ────────────────────────────────────────────── */
+.dash-health-bar {
+    width: 100%;
+    height: 6px;
+    background: var(--kgn-gray-200, #e5e7eb);
+    border-radius: 3px;
+    margin: 0.4rem 0;
+    overflow: hidden;
+}
+
+.dash-health-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.5s ease;
+}
+
+/* ── Charts container ────────────────────────────────────────────── */
+.dash-charts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.dash-chart-box {
+    background: var(--kgn-surface, #fff);
+    border: 1px solid var(--kgn-border, #e5e7eb);
+    border-radius: var(--kgn-radius, 10px);
+    padding: 1rem;
+    min-height: 250px;
+    position: relative;
+    transition: box-shadow var(--kgn-ease, 0.2s ease);
+}
+
+.dash-chart-box:hover {
+    box-shadow: var(--kgn-shadow-sm, 0 1px 3px rgba(0,0,0,0.06));
+}
+
+.dash-chart-box h3 {
+    margin: 0 0 0.5rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--kgn-gray-700, #374151);
+}
+
+.dash-chart-box canvas {
+    max-height: 220px;
+}
+
+/* ── Health metrics list ─────────────────────────────────────────── */
+.dash-metrics {
+    background: var(--kgn-surface, #fff);
+    border: 1px solid var(--kgn-border, #e5e7eb);
+    border-radius: var(--kgn-radius, 10px);
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.dash-metrics h3 {
+    margin: 0 0 0.75rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--kgn-gray-700, #374151);
+}
+
+.dash-metric-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+}
+
+.dash-metric-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--kgn-radius-sm, 6px);
+    background: var(--kgn-gray-50, #f9fafb);
+    transition: background var(--kgn-ease-fast, 0.15s ease);
+}
+
+.dash-metric-item:hover {
+    background: var(--kgn-gray-100, #f3f4f6);
+}
+
+.dash-metric-item dt {
+    font-size: var(--kgn-text-sm, 0.82rem);
+    color: var(--kgn-gray-600, #4b5563);
+    margin: 0;
+}
+
+.dash-metric-item dd {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--kgn-gray-800, #1f2937);
+}
+
+.dash-metric-warn {
+    background: #fffbeb;
+}
+
+.dash-metric-warn dd {
+    color: #b45309;
+}
+
+/* ── Refresh info ────────────────────────────────────────────────── */
+.dash-refresh-info {
+    text-align: center;
+    font-size: var(--kgn-text-xs, 0.72rem);
+    color: var(--kgn-gray-400, #9ca3af);
+    padding: 0.5rem 0 1rem;
+}
+
+/* ── Error state ─────────────────────────────────────────────────── */
+.dash-error {
+    text-align: center;
+    padding: 2rem;
+    color: var(--kgn-danger, #ef4444);
+    font-size: var(--kgn-text-base, 0.9rem);
+}
+
+/* ── Dashboard view container ────────────────────────────────────── */
+#dashboard-view {
+    padding: 1.5rem;
+    padding-bottom: 3rem;
+    overflow-y: auto;
+    flex-direction: column;
+}
+
+/* ── Responsive breakpoints ──────────────────────────────────────── */
+@media (max-width: 768px) {
+    .dash-charts {
+        grid-template-columns: 1fr;
+    }
+    .dash-cards {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    }
+}

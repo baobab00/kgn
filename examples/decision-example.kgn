@@ -1,0 +1,31 @@
+---
+kgn_version: "0.1"
+id: "new:token-storage-decision"
+type: DECISION
+title: "Choose Redis as Token Store"
+status: ACTIVE
+project_id: "example-project"
+agent_id: "example-agent"
+created_at: "2026-02-28T10:00:00+09:00"
+tags: ["auth", "redis", "decision"]
+confidence: 0.85
+---
+
+## Context
+
+Need to decide on a storage solution for authentication token blacklist and session data.
+
+## Content
+
+- Use Redis as the token blacklist store
+- TTL-based auto-expiry eliminates the need for separate cleanup jobs
+- Read latency target: < 1ms
+
+## Rationale
+
+Redis provides TTL support, high read performance, and easy cluster scaling.
+Token validation speed is 10x faster compared to relational DB.
+
+## Constraints
+
+- Redis Sentinel or Cluster mode required (prevent single point of failure)

@@ -1,0 +1,172 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "KGN Node",
+  "scopeName": "source.kgn",
+  "fileTypes": ["kgn"],
+  "patterns": [
+    { "include": "#front-matter" },
+    { "include": "#body" }
+  ],
+  "repository": {
+    "front-matter": {
+      "comment": "YAML front matter region — isolated between opening and closing ---",
+      "begin": "\\A(---)\\s*$",
+      "end": "^(---)\\s*$",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.front-matter.begin.kgn" }
+      },
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.front-matter.end.kgn" }
+      },
+      "name": "meta.front-matter.kgn",
+      "patterns": [
+        { "include": "#kgn-keys" },
+        { "include": "#kgn-node-type-enum" },
+        { "include": "#kgn-node-status-enum" },
+        { "include": "#kgn-uuid" },
+        { "include": "#kgn-new-id" },
+        { "include": "#kgn-version" },
+        { "include": "#kgn-confidence" },
+        { "include": "#yaml-comment" },
+        { "include": "#yaml-string-double" },
+        { "include": "#yaml-string-single" },
+        { "include": "#yaml-number" },
+        { "include": "#yaml-boolean" },
+        { "include": "#yaml-null" },
+        { "include": "#yaml-date" },
+        { "include": "#yaml-tag-list" },
+        { "include": "#yaml-key-value" }
+      ]
+    },
+
+    "kgn-keys": {
+      "comment": "KGN-specific YAML keys highlighted distinctly",
+      "match": "^\\s*(kgn_version|id|type|title|status|project_id|agent_id|created_at|supersedes|tags|confidence)\\s*(:)",
+      "captures": {
+        "1": { "name": "entity.name.tag.kgn" },
+        "2": { "name": "punctuation.separator.key-value.yaml" }
+      }
+    },
+
+    "kgn-node-type-enum": {
+      "comment": "NodeType enum values",
+      "match": "\\b(GOAL|ARCH|SPEC|LOGIC|DECISION|ISSUE|TASK|CONSTRAINT|ASSUMPTION|SUMMARY)\\b",
+      "name": "constant.language.enum.node-type.kgn"
+    },
+
+    "kgn-node-status-enum": {
+      "comment": "NodeStatus enum values",
+      "match": "\\b(ACTIVE|DEPRECATED|SUPERSEDED|ARCHIVED)\\b",
+      "name": "constant.language.enum.node-status.kgn"
+    },
+
+    "kgn-uuid": {
+      "comment": "UUID v4 pattern",
+      "match": "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}",
+      "name": "constant.other.uuid.kgn"
+    },
+
+    "kgn-new-id": {
+      "comment": "Temporary new: slug identifiers",
+      "match": "\\bnew:[\\w\\-\\.]+",
+      "name": "variable.other.slug.kgn"
+    },
+
+    "kgn-version": {
+      "comment": "kgn_version value pattern",
+      "match": "(?<=kgn_version:\\s*[\"']?)\\d+\\.\\d+(?=[\"']?)",
+      "name": "constant.numeric.version.kgn"
+    },
+
+    "kgn-confidence": {
+      "comment": "Confidence float (0.0–1.0)",
+      "match": "(?<=confidence:\\s*)(?:0\\.\\d+|1\\.0|[01])\\b",
+      "name": "constant.numeric.float.confidence.kgn"
+    },
+
+    "yaml-comment": {
+      "match": "(?:^|\\s)(#.*)$",
+      "captures": {
+        "1": { "name": "comment.line.number-sign.yaml" }
+      }
+    },
+
+    "yaml-string-double": {
+      "begin": "\"",
+      "end": "\"",
+      "name": "string.quoted.double.yaml",
+      "patterns": [
+        {
+          "match": "\\\\.",
+          "name": "constant.character.escape.yaml"
+        }
+      ]
+    },
+
+    "yaml-string-single": {
+      "begin": "'",
+      "end": "'",
+      "name": "string.quoted.single.yaml",
+      "patterns": [
+        {
+          "match": "''",
+          "name": "constant.character.escape.yaml"
+        }
+      ]
+    },
+
+    "yaml-number": {
+      "match": "(?<=:\\s)[-+]?(?:\\d+\\.?\\d*|\\d*\\.\\d+)(?:[eE][-+]?\\d+)?\\s*$",
+      "name": "constant.numeric.yaml"
+    },
+
+    "yaml-boolean": {
+      "match": "(?<=:\\s)(?:true|false|True|False|TRUE|FALSE)\\s*$",
+      "name": "constant.language.boolean.yaml"
+    },
+
+    "yaml-null": {
+      "match": "(?<=:\\s)(?:null|Null|NULL|~)\\s*$",
+      "name": "constant.language.null.yaml"
+    },
+
+    "yaml-date": {
+      "match": "\\d{4}-\\d{2}-\\d{2}(?:T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})?)?",
+      "name": "constant.other.date.yaml"
+    },
+
+    "yaml-tag-list": {
+      "comment": "YAML flow sequence for tags: [\"a\", \"b\"]",
+      "begin": "\\[",
+      "end": "\\]",
+      "name": "meta.flow-sequence.yaml",
+      "patterns": [
+        { "include": "#yaml-string-double" },
+        { "include": "#yaml-string-single" },
+        {
+          "match": ",",
+          "name": "punctuation.separator.sequence.yaml"
+        }
+      ]
+    },
+
+    "yaml-key-value": {
+      "comment": "Generic YAML key (not KGN-specific)",
+      "match": "^\\s*([\\w][\\w\\-]*)\\s*(:)",
+      "captures": {
+        "1": { "name": "entity.name.tag.yaml" },
+        "2": { "name": "punctuation.separator.key-value.yaml" }
+      }
+    },
+
+    "body": {
+      "comment": "Markdown body — everything after the closing --- delimiter. Uses ^ to match start of the first post-front-matter line; \\z consumes to EOF.",
+      "begin": "^",
+      "end": "\\z",
+      "name": "text.html.markdown.kgn",
+      "patterns": [
+        { "include": "text.html.markdown" }
+      ]
+    }
+  }
+}

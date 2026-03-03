@@ -1,0 +1,20 @@
+---
+kgn_version: "0.1"
+id: "new:user-spec"
+type: SPEC
+title: "User Management Spec"
+status: ACTIVE
+project_id: "proj-alpha"
+agent_id: "worker-agent-03"
+created_at: "2026-02-27T10:30:00+09:00"
+tags: ["user"]
+confidence: 0.85
+---
+
+## Context
+
+User management module specification.
+
+## Content
+
+Implement user registration and profile management features.

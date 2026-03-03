@@ -1,0 +1,16 @@
+---
+kgn_version: "0.1"
+project_id: "example-project"
+agent_id: "example-agent"
+created_at: "2026-02-28T10:30:00+09:00"
+edges:
+  - from: "new:auth-spec"
+    to:   "new:auth-goal"
+    type: IMPLEMENTS
+    note: "OAuth 2.0 spec implements the authentication system goal"
+
+  - from: "new:token-storage-decision"
+    to:   "new:auth-spec"
+    type: DERIVED_FROM
+    note: "Token storage decision is derived from the authentication flow spec"
+---

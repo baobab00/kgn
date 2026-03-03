@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+dist/
+build/
+*.whl
+
+# Virtual environments
+.venv/
+venv/
+.test-venv/
+
+# Environment variables
+.env
+
+# Ruff
+.ruff_cache/
+
+# pytest
+.pytest_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# MCP (local config)
+.mcp.json
+
+# uv
+uv.lock
+
+# docs (not published to repository)
+docs/
+
+# local config
+claude_desktop_config.json
+CLAUDE.md
+
+# test output artefacts
+test_*.txt
+full_*.txt

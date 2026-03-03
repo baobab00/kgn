@@ -1,0 +1,12 @@
+---
+kgn_version: "9.9"
+id: "880e8400-e29b-41d4-a716-446655440000"
+type: TASK
+title: "Version Mismatch Test"
+status: ACTIVE
+project_id: "proj-alpha"
+agent_id: "worker-agent-03"
+created_at: "2026-02-27T12:00:00+09:00"
+---
+
+This file's kgn_version is an unsupported version.

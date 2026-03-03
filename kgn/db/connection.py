@@ -1,0 +1,85 @@
+"""Database connection pool management."""
+
+from __future__ import annotations
+
+import os
+from collections.abc import Generator
+from contextlib import contextmanager
+from pathlib import Path
+
+from dotenv import load_dotenv
+from psycopg import Connection
+from psycopg_pool import ConnectionPool
+
+_ENV_FILE = Path(__file__).resolve().parent.parent.parent / ".env"
+
+
+def _load_env() -> None:
+    """Load .env file if it exists. Uses override=False so existing
+    environment variables are never silently overwritten (R-001)."""
+    if _ENV_FILE.is_file():
+        load_dotenv(_ENV_FILE, override=False)
+
+
+def _load_db_config() -> dict[str, str | int]:
+    """Load database configuration from environment variables."""
+    _load_env()
+    return {
+        "host": os.environ.get("KGN_DB_HOST", "localhost"),
+        "port": int(os.environ.get("KGN_DB_PORT", "5432")),
+        "dbname": os.environ.get("KGN_DB_NAME", "kgn"),
+        "user": os.environ.get("KGN_DB_USER", "kgn"),
+        "password": os.environ.get("KGN_DB_PASSWORD", ""),
+    }
+
+
+def _build_conninfo(config: dict[str, str | int]) -> str:
+    """Build psycopg connection string from config dict."""
+    return (
+        f"host={config['host']} "
+        f"port={config['port']} "
+        f"dbname={config['dbname']} "
+        f"user={config['user']} "
+        f"password={config['password']}"
+    )
+
+
+_pool: ConnectionPool | None = None
+
+
+def get_pool() -> ConnectionPool:
+    """Get or create the global connection pool."""
+    global _pool  # noqa: PLW0603
+    if _pool is None:
+        _load_env()
+        config = _load_db_config()
+        conninfo = _build_conninfo(config)
+        min_size = int(os.environ.get("KGN_DB_POOL_MIN", "1"))
+        max_size = int(os.environ.get("KGN_DB_POOL_MAX", "5"))
+        _pool = ConnectionPool(
+            conninfo=conninfo,
+            min_size=min_size,
+            max_size=max_size,
+            # Phase 5: resilience settings
+            timeout=float(os.environ.get("KGN_DB_POOL_TIMEOUT", "10.0")),
+            max_idle=float(os.environ.get("KGN_DB_POOL_MAX_IDLE", "300.0")),
+            reconnect_timeout=float(os.environ.get("KGN_DB_POOL_RECONNECT_TIMEOUT", "30.0")),
+            open=True,
+        )
+    return _pool
+
+
+def close_pool() -> None:
+    """Close the global connection pool."""
+    global _pool  # noqa: PLW0603
+    if _pool is not None:
+        _pool.close()
+        _pool = None
+
+
+@contextmanager
+def get_connection() -> Generator[Connection, None, None]:
+    """Get a connection from the pool as a context manager."""
+    pool = get_pool()
+    with pool.connection() as conn:
+        yield conn
