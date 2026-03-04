@@ -28,6 +28,7 @@ long-term source of truth. Export, commit, and push in one command.
 
 ## Table of Contents
 
+- [Architecture](#architecture)
 - [Why KGN?](#why-kgn)
 - [Quick Start](#quick-start)
 - [MCP Server (Claude Integration)](#10-mcp-server-claude-integration)
@@ -36,6 +37,21 @@ long-term source of truth. Export, commit, and push in one command.
 - [File Formats](#file-formats)
 - [Development](#development)
 - [Tech Stack](#tech-stack)
+
+---
+
+## Architecture
+
+For a deep dive into KGN's internal design — layer structure, module dependencies, database schema, data flows, and more — see the full **[Architecture Guide](ARCHITECTURE.md)** with 16 interactive Mermaid diagrams.
+
+```mermaid
+graph LR
+    A[".kgn / .kge"] --> B["Parser"]
+    B --> C["IngestService"]
+    C --> D[("PostgreSQL<br/>+ pgvector")]
+    D --> E["CLI · MCP · LSP · Web"]
+    E --> F["Git / GitHub Sync"]
+```
 
 ---
 
