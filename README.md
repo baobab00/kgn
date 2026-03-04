@@ -285,8 +285,8 @@ The `vscode-kgn` extension provides IDE-level support for `.kgn` and `.kge` file
 # Install LSP dependencies
 pip install kgn-mcp[lsp]
 
-# Install extension (from .vsix)
-code --install-extension vscode-kgn-0.1.0.vsix
+# Install extension from VS Code Marketplace
+code --install-extension baobab00.vscode-kgn
 ```
 
 **Features:**

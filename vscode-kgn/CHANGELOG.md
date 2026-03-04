@@ -2,6 +2,13 @@
 
 All notable changes to the `vscode-kgn` extension will be documented in this file.
 
+## [0.1.1] - 2026-03-04
+
+### Changed
+
+- Updated extension icon to official KGN logo
+- Publisher set to `baobab00`
+
 ## [0.1.0] - 2026-03-04
 
 Initial release.

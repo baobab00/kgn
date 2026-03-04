@@ -48,6 +48,11 @@ docs/
 claude_desktop_config.json
 CLAUDE.md
 
+# VS Code extension
+*.vsix
+vscode-kgn/node_modules/
+vscode-kgn/out/
+
 # test output artefacts
 test_*.txt
 full_*.txt

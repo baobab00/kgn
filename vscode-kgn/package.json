@@ -2,8 +2,8 @@
   "name": "vscode-kgn",
   "displayName": "KGN — Knowledge Graph Node",
   "description": "Syntax highlighting, validation, and IDE support for .kgn and .kge files",
-  "version": "0.1.0",
-  "publisher": "kgn-project",
+  "version": "0.1.1",
+  "publisher": "baobab00",
   "license": "MIT",
   "icon": "icons/kgn-icon.png",
   "repository": {
