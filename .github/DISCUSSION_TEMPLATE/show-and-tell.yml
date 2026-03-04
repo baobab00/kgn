@@ -1,0 +1,35 @@
+title: "Show & Tell"
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        🎉 Show off what you've built with KGN!
+        Share your knowledge graphs, integrations, workflows, or any creative uses.
+  - type: textarea
+    id: project
+    attributes:
+      label: What did you build?
+      description: Describe your project or use case.
+      placeholder: Tell us about what you built with KGN...
+    validations:
+      required: true
+  - type: textarea
+    id: highlights
+    attributes:
+      label: Highlights
+      description: What worked well? Any interesting patterns or tips?
+      placeholder: Share what you learned or any tips for others...
+    validations:
+      required: false
+  - type: textarea
+    id: links
+    attributes:
+      label: Links & Resources
+      description: Links to repos, blog posts, screenshots, etc.
+      placeholder: |
+        - Repository: 
+        - Demo: 
+        - Blog post: 
+    validations:
+      required: false

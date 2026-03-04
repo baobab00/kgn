@@ -1,0 +1,32 @@
+title: "Ideas & Feature Proposals"
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        💡 Share your ideas for improving KGN!
+        For concrete feature requests with clear scope, consider opening an [Issue](https://github.com/baobab00/kgn/issues/new?template=feature_request.yml) instead.
+  - type: textarea
+    id: idea
+    attributes:
+      label: Idea Description
+      description: Describe your idea or proposal.
+      placeholder: What improvement or new capability would you like to see?
+    validations:
+      required: true
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: Why is this idea valuable? What problem does it solve?
+      placeholder: Explain the use case or pain point...
+    validations:
+      required: false
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Have you considered any alternative approaches?
+      placeholder: Describe any workarounds or alternative solutions...
+    validations:
+      required: false
