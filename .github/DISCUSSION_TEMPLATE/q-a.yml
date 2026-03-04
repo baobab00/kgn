@@ -1,0 +1,53 @@
+title: "Questions & Help"
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ❓ Ask questions about KGN usage, setup, or troubleshooting.
+        Please search existing discussions and [documentation](https://github.com/baobab00/kgn#readme) before posting.
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: What do you need help with?
+      placeholder: Describe your question clearly...
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Related Area
+      description: Which area of KGN does your question relate to?
+      options:
+        - Installation & Setup
+        - CLI Usage
+        - MCP Server
+        - LSP Server
+        - Knowledge Graph (.kgn/.kge format)
+        - Embedding & Similarity Search
+        - Task Queue & Orchestration
+        - GitHub Integration
+        - VS Code Extension
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: tried
+    attributes:
+      label: What have you tried?
+      description: Describe what you've already attempted.
+      placeholder: Steps you've taken so far...
+    validations:
+      required: false
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: "Python version, OS, kgn-mcp version, etc."
+      placeholder: |
+        - kgn-mcp version: 
+        - Python version: 
+        - OS: 
+    validations:
+      required: false
