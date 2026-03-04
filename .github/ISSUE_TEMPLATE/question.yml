@@ -1,0 +1,30 @@
+name: "\u2753 Question"
+description: Ask a question about usage or configuration
+title: "[Question]: "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have a question? We're happy to help!
+        For general discussion, consider using [GitHub Discussions](https://github.com/baobab00/kgn/discussions) instead.
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your Question
+      description: What would you like to know?
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: What are you trying to achieve? Include relevant config or setup details.
+
+  - type: input
+    id: version
+    attributes:
+      label: KGN Version
+      placeholder: "e.g. 0.11.0"

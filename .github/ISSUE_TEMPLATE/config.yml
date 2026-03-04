@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: "\U0001F4AC Discussions"
+    url: https://github.com/baobab00/kgn/discussions
+    about: Ask questions and share ideas in GitHub Discussions
+  - name: "\U0001F4D6 Documentation"
+    url: https://github.com/baobab00/kgn#readme
+    about: Read the documentation before opening an issue
+  - name: "\U0001F4E6 PyPI Package"
+    url: https://pypi.org/project/kgn-mcp/
+    about: Check the latest published version
