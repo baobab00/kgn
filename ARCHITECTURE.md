@@ -277,23 +277,23 @@ erDiagram
     agents {
         uuid id PK
         string key UK
-        AgentRole role
+        string role
         timestamp created_at
     }
 
-    nodes ||--o{ node_versions : "version history"
-    nodes ||--o| node_embeddings : "has embedding"
+    nodes ||--o{ node_versions : "version-history"
+    nodes ||--o| node_embeddings : "has-embedding"
     nodes ||--o{ edges : "from"
     nodes ||--o{ edges : "to"
-    nodes ||--o{ task_queue : "is task"
+    nodes ||--o{ task_queue : "is-task"
     nodes {
         uuid id PK
         uuid project_id FK
-        NodeType type
-        NodeStatus status
+        string type
+        string status
         string title
         text body_md
-        string[] tags
+        text tags
         float confidence
         string content_hash
         uuid created_by FK
@@ -312,8 +312,8 @@ erDiagram
     }
 
     node_embeddings {
-        uuid node_id PK_FK
-        vector_1536 embedding
+        uuid node_id FK
+        vector embedding
         timestamp created_at
     }
 
@@ -321,7 +321,7 @@ erDiagram
         uuid id PK
         uuid from_id FK
         uuid to_id FK
-        EdgeType type
+        string type
         float weight
         jsonb properties
     }
@@ -329,7 +329,7 @@ erDiagram
     task_queue {
         uuid id PK
         uuid task_node_id FK
-        TaskState state
+        string state
         int priority
         uuid agent_id FK
         timestamp lease_expires
@@ -348,7 +348,7 @@ erDiagram
     agent_activities {
         uuid id PK
         uuid agent_id FK
-        ActivityType type
+        string type
         uuid target_node_id FK
         jsonb metadata
         timestamp created_at
