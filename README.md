@@ -31,7 +31,7 @@ long-term source of truth. Export, commit, and push in one command.
 - [Architecture](#architecture)
 - [Why KGN?](#why-kgn)
 - [Quick Start](#quick-start)
-- [MCP Server (Claude Integration)](#10-mcp-server-claude-integration)
+- [MCP Server (Claude Integration)](#mcp-server-claude-integration)
 - [Multi-Agent Orchestration](#multi-agent-orchestration)
 - [CLI Commands](#cli-commands)
 - [File Formats](#file-formats)
@@ -74,15 +74,31 @@ KGN gives your agents a **shared, queryable memory**:
 
 ## Quick Start
 
-### 1. Prerequisites
+> **📖 New to KGN?** Follow the step-by-step **[Getting Started Guide](GUIDE.md)** ( [한국어](GUIDE_KO.md) ) — no prior experience required.
 
-- Python 3.12+
-- [uv](https://docs.astral.sh/uv/) (package manager)
-- Docker / Docker Compose (PostgreSQL)
+### Install
 
-> **Optional dependency:** Embedding features (`kgn embed`, `kgn ingest --embed`) and similarity search (`kgn query similar`) require the `openai` package. Core ingest/query/health features work without it.
+```bash
+pip install kgn-mcp
+```
 
-### Embedding Provider Setup
+### Start Database
+
+```bash
+git clone https://github.com/baobab00/kgn.git && cd kgn
+docker compose -f docker/docker-compose.yml up -d postgres
+```
+
+### First Run
+
+```bash
+kgn init --project my-project
+kgn ingest examples/ --project my-project --recursive
+kgn status --project my-project
+```
+
+<details>
+<summary><b>Embedding Provider Setup</b></summary>
 
 To use embedding features, set your OpenAI API key in the `.env` file:
 
@@ -99,110 +115,26 @@ If the API key is not set, ingest works normally and embedding is silently skipp
 kgn embed provider test
 ```
 
-### 2. Installation
+</details>
 
-```bash
-# Method A: pip install (recommended)
-pip install kgn-mcp
-
-# Method B: Source install (development)
-git clone https://github.com/baobab00/kgn.git
-cd kgn
-uv sync
-
-# Optional: OpenAI embedding support
-pip install kgn-mcp[openai]
-```
-
-```bash
-# Start PostgreSQL container (DB only)
-docker compose -f docker/docker-compose.yml up -d postgres
-```
-
-#### Docker All-in-One (optional)
+<details>
+<summary><b>Docker All-in-One</b></summary>
 
 Run PostgreSQL + kgn CLI together with Docker:
 
 ```bash
-# Build + start
 docker compose -f docker/docker-compose.yml up -d --build
-
-# Use kgn CLI
 docker compose -f docker/docker-compose.yml exec kgn kgn init --project my-project
 docker compose -f docker/docker-compose.yml exec kgn kgn --help
-
-# Place .kgn/.kge files in docker/workspace/ directory
 ```
 
-### 3. Initialize DB
+Place `.kgn`/`.kge` files in `docker/workspace/` directory.
 
-```bash
-kgn init --project my-project
-```
+</details>
 
-### 4. Ingest Files
+---
 
-```bash
-# Single file
-kgn ingest my-spec.kgn --project my-project
-
-# Entire directory (recursive)
-kgn ingest ./specs/ --project my-project --recursive
-
-# Example files
-kgn ingest examples/ --project my-project --recursive
-```
-
-### 5. Project Status
-
-```bash
-kgn status --project my-project
-```
-
-### 6. Query
-
-```bash
-# Search nodes
-kgn query nodes --project my-project --type SPEC --status ACTIVE
-
-# Extract subgraph (JSON)
-kgn query subgraph <node-uuid> --project my-project --depth 2 --format json
-
-# Extract subgraph (Markdown)
-kgn query subgraph <node-uuid> --project my-project --format md
-```
-
-### 7. Graph Health
-
-```bash
-kgn health --project my-project
-```
-
-### 8. Semantic Search
-
-```bash
-# Ingest + auto-embed
-kgn ingest examples/ --project my-project --recursive --embed
-
-# Backfill embeddings for existing nodes
-kgn embed --project my-project
-
-# Find similar nodes
-kgn query similar <node-uuid> --project my-project --top 5
-```
-
-### 9. Conflict Detection
-
-```bash
-# Scan for conflict candidates
-kgn conflict scan --project my-project
-
-# Approve/dismiss conflicts
-kgn conflict approve <edge-id> --project my-project
-kgn conflict dismiss <edge-id> --project my-project
-```
-
-### 10. MCP Server (Claude Integration)
+## MCP Server (Claude Integration)
 
 The MCP (Model Context Protocol) server enables Claude to directly read, write, and manage tasks in the knowledge graph.
 
@@ -230,7 +162,8 @@ KGN_MCP_TRANSPORT=streamable-http kgn mcp serve --project my-project
 }
 ```
 
-**MCP Tools** (12 tools):
+<details>
+<summary><b>MCP Tools (12 tools)</b></summary>
 
 | Tool | Category | Description |
 |---|---|---|
@@ -247,7 +180,10 @@ KGN_MCP_TRANSPORT=streamable-http kgn mcp serve --project my-project
 | `ingest_edge` | Write | Ingest edge from .kge string |
 | `enqueue_task` | Write | Enqueue TASK node |
 
-### 11. Git/GitHub Sync
+</details>
+
+<details>
+<summary><b>Git/GitHub Sync</b></summary>
 
 ```bash
 # Export DB → filesystem (+ auto-generate Mermaid README)
@@ -260,11 +196,6 @@ kgn sync import --project my-project --source ./sync
 kgn sync push --project my-project --target ./sync
 kgn sync pull --project my-project --target ./sync
 
-# Git repository management
-kgn git init --target ./sync
-kgn git status --target ./sync
-kgn git log --target ./sync
-
 # Mermaid visualization
 kgn graph mermaid --project my-project
 kgn graph readme --project my-project --target ./sync
@@ -274,49 +205,34 @@ kgn git branch list --target ./sync
 kgn git pr create --project my-project --target ./sync --title "PR title"
 ```
 
-### 12. Web Dashboard
+</details>
+
+<details>
+<summary><b>Web Dashboard</b></summary>
 
 ```bash
-# Install with web dependencies
 pip install kgn-mcp[web]
-
-# Start the web dashboard
 kgn web serve --project my-project --port 8080
 ```
 
-Open http://localhost:8080 in your browser to:
-- **Graph View** — Explore the knowledge graph interactively (Cytoscape.js)
-- **Node Detail** — Click any node to see front matter, body, and edge relationships
-- **Task Board** — Monitor task queue via Kanban board (READY / IN_PROGRESS / BLOCKED / DONE / FAILED)
-- **Health Dashboard** — Track graph health metrics with Chart.js visualizations
-- **Search & Filter** — Filter by type/status/tags, find similar nodes, detect conflicts
+Open http://localhost:8080 — Graph View, Task Board, Health Dashboard, Search & Filter.
 
-> Requires: `pip install kgn-mcp[web]` (fastapi, uvicorn, jinja2)
+</details>
 
-### 13. VS Code Extension
-
-The `vscode-kgn` extension provides IDE-level support for `.kgn` and `.kge` files.
+<details>
+<summary><b>VS Code Extension</b></summary>
 
 ```bash
-# Install LSP dependencies
-pip install kgn-mcp[lsp]
-
-# Install extension from VS Code Marketplace
 code --install-extension baobab00.vscode-kgn
+pip install kgn-mcp[lsp]    # for LSP features
 ```
 
-**Features:**
-- **Syntax Highlighting** — TextMate grammar for YAML front matter + Markdown body
-- **Real-time Diagnostics** — V1–V10 validation rules via Language Server
-- **Auto-completion** — `type`, `status`, and edge type enums
-- **Hover** — Node ID resolution and field descriptions
-- **Go to Definition** — Navigate to referenced nodes
-- **CodeLens** — Reference counts per node
-- **Subgraph Preview** — Mermaid-based graph visualization
+Syntax Highlighting, Diagnostics, Auto-completion, Hover, Go to Definition, CodeLens, Subgraph Preview.
 
-> TextMate syntax highlighting works without Python. LSP features require `pip install kgn-mcp[lsp]`.
+</details>
 
-### Error Code System
+<details>
+<summary><b>Error Code System</b></summary>
 
 All MCP error responses are returned as structured JSON:
 
@@ -344,11 +260,21 @@ All MCP error responses are returned as structured JSON:
 | `KGN-402` | Task | Lease expired | ✅ |
 | `KGN-999` | Internal | Unexpected server error | ✅ |
 
+</details>
+
 ## Multi-Agent Orchestration
 
 KGN supports multi-agent collaborative workflows where multiple AI agents work together on a knowledge graph with role-based access control, task handoff, and conflict resolution.
 
-### Agent Roles
+- **5 Agent Roles** — genesis, worker, reviewer, indexer, admin with role-based access control
+- **3 Workflow Templates** — design-to-impl, issue-resolution, knowledge-indexing
+- **Task Handoff** — Automatic context propagation between workflow steps
+- **Advisory Locking** — Prevents concurrent modifications to the same node
+- **Conflict Resolution** — Detects conflicts and auto-creates review tasks
+- **Observability** — Agent activity timeline, task flow stats, bottleneck detection
+
+<details>
+<summary><b>Agent Roles & Workflow Details</b></summary>
 
 | Role | Create | Checkout | Description |
 |---|---|---|---|
@@ -358,10 +284,6 @@ KGN supports multi-agent collaborative workflows where multiple AI agents work t
 | **indexer** | SUMMARY | — | Knowledge indexing |
 | **admin** | All types | ✅ (all tasks) | Full access |
 
-### Workflow Engine
-
-Built-in workflow templates orchestrate multi-step processes:
-
 | Template | Steps | Description |
 |---|---|---|
 | `design-to-impl` | GOAL → SPEC → ARCH → TASK(impl) → TASK(review) | Full design-to-implementation pipeline |
@@ -369,32 +291,13 @@ Built-in workflow templates orchestrate multi-step processes:
 | `knowledge-indexing` | GOAL → TASK(index) → TASK(review) | Knowledge capture pipeline |
 
 ```bash
-# Execute a workflow via MCP
-# workflow_run(project_id, trigger_node_id, template_name)
-```
-
-### Key Features
-
-- **Task Handoff** — Automatic context propagation between workflow steps (impl → review)
-- **Advisory Locking** — `NodeLockService` prevents concurrent modifications to the same node
-- **Conflict Resolution** — Detects when multiple agents modify the same node; auto-creates review tasks
-- **Observability** — Agent activity timeline, task flow stats, bottleneck detection
-
-### Agent CLI
-
-```bash
-# List registered agents
 kgn agent list --project my-project
-
-# Set agent role
 kgn agent role --project my-project --agent-id <uuid> --role worker
-
-# View agent statistics
 kgn agent stats --project my-project --agent-id <uuid>
-
-# View agent activity timeline
 kgn agent timeline --project my-project --agent-id <uuid>
 ```
+
+</details>
 
 ## CLI Commands
 
@@ -417,21 +320,22 @@ Key commands summary:
 | **Web** | `kgn web serve` | Web visualization dashboard |
 | **LSP** | `kgn lsp serve` | Language Server (VS Code integration) |
 
-## Expired Task Recovery
+<details>
+<summary><b>Expired Task Recovery</b></summary>
 
 When a checked-out task exceeds its `lease_expires_at`, it is considered **expired**.
 `requeue_expired` resets expired `IN_PROGRESS` tasks to `READY` and increments `attempts`.
 
-| Method | Description |
-|---|---|
-| **MCP** | `checkout` automatically calls `requeue_expired` beforehand |
-| **CLI** | Manual invocation or cron schedule required (call before `kgn task checkout`) |
+- **MCP:** `checkout` automatically calls `requeue_expired` beforehand
+- **CLI:** Manual invocation or cron schedule required
+- When `max_attempts` (default 3) is exceeded, the task transitions to `FAILED`
 
-> When `max_attempts` (default 3) is exceeded, the task transitions to `FAILED` and is excluded from automatic recovery.
+</details>
 
 ## File Formats
 
-### `.kgn` — Knowledge Graph Node
+<details>
+<summary><b>.kgn — Knowledge Graph Node</b></summary>
 
 ```yaml
 ---
@@ -452,7 +356,10 @@ confidence: 0.9
 ...
 ```
 
-### `.kge` — Edge Definition
+</details>
+
+<details>
+<summary><b>.kge — Edge Definition</b></summary>
 
 ```yaml
 ---
@@ -467,16 +374,9 @@ edges:
 ---
 ```
 
-## Example Files
+</details>
 
-The `examples/` directory contains practical examples:
-
-| File | Description |
-|---|---|
-| `goal-example.kgn` | GOAL type node example |
-| `spec-example.kgn` | SPEC type node example |
-| `decision-example.kgn` | DECISION type node example |
-| `edges-example.kge` | Edge definition example (IMPLEMENTS, DERIVED_FROM) |
+See `examples/` directory for practical `.kgn` and `.kge` file examples.
 
 ## Development
 
