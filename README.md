@@ -412,25 +412,6 @@ uv run pytest --cov=kgn --cov-report=term-missing
 | **Infra** | Docker Compose + GitHub Actions CI |
 | **Quality** | [ruff](https://docs.astral.sh/ruff/) + pytest (2031 tests, 93%+ coverage) |
 
-## Contributors
-
-<!-- ALL-CONTRIBUTORS-LIST:START -->
-<table>
-  <tbody>
-    <tr>
-      <td align="center" valign="top" width="120px">
-        <a href="https://github.com/baobab00"><img src="https://avatars.githubusercontent.com/baobab00?s=60" width="60px;" alt="Haenam Park"/><br /><sub><b>Haenam Park</b></sub></a><br />
-        💻 📖 🚇 ⚠️ 🚧
-      </td>
-      <td align="center" valign="top" width="120px">
-        <a href="https://github.com/copilot"><img src="https://avatars.githubusercontent.com/u/198982749?s=60" width="60px;" alt="GitHub Copilot"/><br /><sub><b>GitHub Copilot</b></sub></a><br />
-        💻 📖
-      </td>
-    </tr>
-  </tbody>
-</table>
-<!-- ALL-CONTRIBUTORS-LIST:END -->
-
 ## License
 
 MIT
