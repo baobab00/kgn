@@ -48,7 +48,9 @@ class TestFindEnvFile:
             result = _find_env_file()
         assert result == pkg_env
 
-    def test_returns_none_when_no_env(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_returns_none_when_no_env(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """None is returned when no .env exists anywhere."""
         monkeypatch.chdir(tmp_path)
         with patch("kgn.db.connection._PKG_ENV_FILE", tmp_path / "nonexistent" / ".env"):
