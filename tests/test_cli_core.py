@@ -13,6 +13,7 @@ from pathlib import Path
 from typer.testing import CliRunner
 
 from kgn.cli import app
+from kgn.cli._core import _ensure_env_file
 from kgn.models.enums import NodeStatus, NodeType
 from kgn.models.node import NodeRecord
 
@@ -44,6 +45,41 @@ def _make_node(
         content_hash=uuid.uuid4().hex,
         tags=tags or ["test"],
     )
+
+
+# ══════════════════════════════════════════════════════════════════════
+# _ensure_env_file
+# ══════════════════════════════════════════════════════════════════════
+
+
+class TestEnsureEnvFile:
+    def test_creates_env_when_missing(self, tmp_path: Path, monkeypatch) -> None:
+        monkeypatch.chdir(tmp_path)
+        result = _ensure_env_file()
+        assert result == tmp_path / ".env"
+        content = result.read_text(encoding="utf-8")
+        assert "KGN_DB_PORT=5433" in content
+        assert "KGN_DB_PASSWORD=kgn_dev_password" in content
+
+    def test_returns_none_when_all_keys_present(self, tmp_path: Path, monkeypatch) -> None:
+        env = tmp_path / ".env"
+        env.write_text(
+            "KGN_DB_HOST=h\nKGN_DB_PORT=1\nKGN_DB_NAME=d\nKGN_DB_USER=u\nKGN_DB_PASSWORD=p\n"
+        )
+        monkeypatch.chdir(tmp_path)
+        assert _ensure_env_file() is None
+
+    def test_appends_missing_keys(self, tmp_path: Path, monkeypatch) -> None:
+        env = tmp_path / ".env"
+        env.write_text("KGN_DB_HOST=localhost\nKGN_DB_PORT=5433\n")
+        monkeypatch.chdir(tmp_path)
+        result = _ensure_env_file()
+        assert result == env
+        content = env.read_text(encoding="utf-8")
+        assert "# Added by kgn init" in content
+        assert "KGN_DB_PASSWORD" in content
+        assert "KGN_DB_NAME" in content
+        assert "KGN_DB_USER" in content
 
 
 # ══════════════════════════════════════════════════════════════════════
