@@ -200,11 +200,13 @@ kgn query nodes --project my-first-project --type SPEC
   "mcpServers": {
     "kgn": {
       "command": "kgn",
-      "args": ["mcp", "serve", "--project", "my-first-project"]
+      "args": ["mcp", "serve", "--project", "my-first-project", "--role", "admin"]
     }
   }
 }
 ```
+
+> **💡 사용 가능한 역할:** `admin` (전체 권한), `genesis` (GOAL/SPEC/ARCH/CONSTRAINT), `worker` (LOGIC/DECISION), `reviewer` (ISSUE/SUMMARY), `indexer` (SUMMARY만). 생략 시 기본값은 `admin`입니다.
 
 3. Claude Desktop을 재시작하세요
 
@@ -215,7 +217,7 @@ kgn query nodes --project my-first-project --type SPEC
 ### Claude Code (터미널) 연결
 
 ```bash
-claude mcp add kgn -- kgn mcp serve --project my-first-project
+claude mcp add kgn -- kgn mcp serve --project my-first-project --role admin
 ```
 
 ---
@@ -333,7 +335,7 @@ docker compose -f docker/docker-compose.yml up -d postgres
 | 폴더 전체 추가 | `kgn ingest <폴더>/ --project <이름> --recursive` |
 | 상태 확인 | `kgn status --project <이름>` |
 | 노드 검색 | `kgn query nodes --project <이름>` |
-| MCP 서버 시작 | `kgn mcp serve --project <이름>` |
+| MCP 서버 시작 | `kgn mcp serve --project <이름> [--role admin]` |
 | 웹 대시보드 | `kgn web serve --project <이름>` |
 | 전체 명령어 보기 | `kgn --help` |
 

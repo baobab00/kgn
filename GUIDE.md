@@ -200,11 +200,13 @@ This is where KGN really shines — letting Claude access your knowledge graph.
   "mcpServers": {
     "kgn": {
       "command": "kgn",
-      "args": ["mcp", "serve", "--project", "my-first-project"]
+      "args": ["mcp", "serve", "--project", "my-first-project", "--role", "admin"]
     }
   }
 }
 ```
+
+> **💡 Available roles:** `admin` (full access), `genesis` (GOAL/SPEC/ARCH/CONSTRAINT), `worker` (LOGIC/DECISION), `reviewer` (ISSUE/SUMMARY), `indexer` (SUMMARY only). When omitted, defaults to `admin`.
 
 3. Restart Claude Desktop
 
@@ -215,7 +217,7 @@ Now Claude can read, search, and write to your knowledge graph.
 ### For Claude Code (Terminal)
 
 ```bash
-claude mcp add kgn -- kgn mcp serve --project my-first-project
+claude mcp add kgn -- kgn mcp serve --project my-first-project --role admin
 ```
 
 ---
@@ -333,7 +335,7 @@ docker compose -f docker/docker-compose.yml up -d postgres
 | Add a whole folder | `kgn ingest <folder>/ --project <name> --recursive` |
 | Check status | `kgn status --project <name>` |
 | Search nodes | `kgn query nodes --project <name>` |
-| Start MCP server | `kgn mcp serve --project <name>` |
+| Start MCP server | `kgn mcp serve --project <name> [--role admin]` |
 | Web dashboard | `kgn web serve --project <name>` |
 | See all commands | `kgn --help` |
 

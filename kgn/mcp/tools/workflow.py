@@ -87,7 +87,8 @@ def register_workflow_tools(server: FastMCP) -> None:
                     KgnErrorCode.PROJECT_NOT_FOUND,
                 )
 
-            agent_id = repo.get_or_create_agent(pid, agent)
+            agent_role_default = getattr(server, "_kgn_agent_role", "admin")
+            agent_id = repo.get_or_create_agent(pid, agent, role=agent_role_default)
 
             subgraph_svc = SubgraphService(repo)
             embed_client = server._kgn_embed_client  # type: ignore[attr-defined]

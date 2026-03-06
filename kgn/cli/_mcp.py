@@ -28,6 +28,14 @@ def mcp_serve(
         int,
         typer.Option("--port", help="HTTP transport port number"),
     ] = int(os.environ.get("KGN_MCP_PORT", "8000")),
+    role: Annotated[
+        str,
+        typer.Option(
+            "--role",
+            "-r",
+            help="Agent role (genesis | worker | reviewer | indexer | admin)",
+        ),
+    ] = os.environ.get("KGN_AGENT_ROLE", "admin"),
 ) -> None:
     """Start the MCP server.
 
@@ -53,7 +61,12 @@ def mcp_serve(
         stderr=(transport == "stdio"),
     )
 
-    server = create_server(project)
+    valid_roles = ("genesis", "worker", "reviewer", "indexer", "admin")
+    if role not in valid_roles:
+        console.print(f"[red]Unsupported role: {role}[/red]\nAvailable: {', '.join(valid_roles)}")
+        raise typer.Exit(code=1)
+
+    server = create_server(project, role=role)
 
     if transport != "stdio":
         server.settings.port = port

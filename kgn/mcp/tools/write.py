@@ -39,9 +39,11 @@ def register_write_tools(server: FastMCP) -> None:
 
         with server._kgn_conn_factory() as c:  # type: ignore[attr-defined]
             repo = KgnRepository(c)
+            agent_role_default = getattr(server, "_kgn_agent_role", "admin")
             agent_id = repo.get_or_create_agent(
                 server._kgn_project_id,
                 "mcp",  # type: ignore[attr-defined]
+                role=agent_role_default,
             )
 
             # ── Role guard: pre-parse to check node type permission ───
@@ -145,9 +147,11 @@ def register_write_tools(server: FastMCP) -> None:
 
         with server._kgn_conn_factory() as c:  # type: ignore[attr-defined]
             repo = KgnRepository(c)
+            agent_role_default = getattr(server, "_kgn_agent_role", "admin")
             agent_id = repo.get_or_create_agent(
                 server._kgn_project_id,
                 "mcp",  # type: ignore[attr-defined]
+                role=agent_role_default,
             )
 
             # ── Role guard: pre-parse to check edge type permission ───

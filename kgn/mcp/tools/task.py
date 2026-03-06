@@ -44,7 +44,8 @@ def register_task_tools(server: FastMCP) -> None:
                 )
                 return _error_json(f"Project not found: {project}", KgnErrorCode.PROJECT_NOT_FOUND)
 
-            agent_id = repo.get_or_create_agent(pid, agent)
+            agent_role_default = getattr(server, "_kgn_agent_role", "admin")
+            agent_id = repo.get_or_create_agent(pid, agent, role=agent_role_default)
 
             # ── Role guard: check task checkout permission ────────────
             agent_role_str = repo.get_agent_role(agent_id) or "admin"

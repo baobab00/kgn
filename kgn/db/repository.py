@@ -162,14 +162,23 @@ class KgnRepository:
     ) -> uuid.UUID:
         """Return existing agent UUID or create a new one.
 
+        If the agent already exists and *role* differs from the stored value,
+        the stored role is updated to match.
+
         Default role is ``admin`` for backward compatibility (R16).
         """
         row = self._conn.execute(
-            "SELECT id FROM agents WHERE project_id = %s AND agent_key = %s",
+            "SELECT id, role FROM agents WHERE project_id = %s AND agent_key = %s",
             (project_id, agent_key),
         ).fetchone()
         if row:
-            return row[0]
+            agent_id, current_role = row
+            if str(current_role) != role:
+                self._conn.execute(
+                    "UPDATE agents SET role = %s WHERE id = %s",
+                    (role, agent_id),
+                )
+            return agent_id
 
         row = self._conn.execute(
             "INSERT INTO agents (project_id, agent_key, role) VALUES (%s, %s, %s) RETURNING id",
