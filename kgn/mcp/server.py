@@ -54,6 +54,7 @@ def create_server(
     *,
     conn: Connection | None = None,
     embedding_client: EmbeddingClient | None = _SENTINEL,  # type: ignore[assignment]
+    role: str = "admin",
 ) -> FastMCP:
     """Create and configure a FastMCP server instance for the given project.
 
@@ -67,6 +68,9 @@ def create_server(
     embedding_client:
         Embedding client. By default, auto-created via ``create_embedding_client()``
         factory. Pass ``None`` explicitly to disable embeddings.
+    role:
+        Default agent role for this MCP session. Agents created via this
+        server will use this role. Defaults to ``"admin"``.
 
     Returns
     -------
@@ -88,6 +92,7 @@ def create_server(
     # Store project info on server instance for tool handler access
     server._kgn_project_id = project_id  # type: ignore[attr-defined]
     server._kgn_project_name = project_name  # type: ignore[attr-defined]
+    server._kgn_agent_role = role  # type: ignore[attr-defined]
 
     # Connection factory: fixed connection for tests, pool for production
     if conn is not None:

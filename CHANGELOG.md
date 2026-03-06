@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.2]
+
+### Added
+
+- `kgn mcp serve --role` / `-r` — configurable agent role at server start (default: `admin`)
+- Environment variable `KGN_AGENT_ROLE` support for MCP server role configuration
+- `get_or_create_agent()` role sync — existing agents automatically update to the requested role
+
+### Changed
+
+- `create_server()` accepts `role` parameter, stored as `server._kgn_agent_role`
+- All MCP tool handlers (`ingest_node`, `ingest_edge`, `task_checkout`, `workflow_run`) pass configured role
+- `claude_desktop_config.json` template updated with `--role genesis` example
+- `__version__`: 0.11.1 → 0.11.2
+
+## [0.11.1]
+
+### Added
+
+- `.env` auto-generation on `kgn init` — creates `.env` with default DB credentials if missing
+
+### Fixed
+
+- `.env` file resolution — CWD-first search for pip-installed users
+- `publish.yml` IndentationError — YAML `>-` to `|` + heredoc for inline Python scripts
+- `publish.yml` duplicate upload error — added `skip-existing: true` to all publish jobs
+
+### Changed
+
+- `__version__`: 0.11.0 → 0.11.1
+
 ## [0.11.0]
 
 Phase 11 — VS Code Extension + Language Server
