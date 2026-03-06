@@ -63,10 +63,7 @@ def mcp_serve(
 
     valid_roles = ("genesis", "worker", "reviewer", "indexer", "admin")
     if role not in valid_roles:
-        console.print(
-            f"[red]Unsupported role: {role}[/red]\n"
-            f"Available: {', '.join(valid_roles)}"
-        )
+        console.print(f"[red]Unsupported role: {role}[/red]\nAvailable: {', '.join(valid_roles)}")
         raise typer.Exit(code=1)
 
     server = create_server(project, role=role)
