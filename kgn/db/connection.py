@@ -11,14 +11,29 @@ from dotenv import load_dotenv
 from psycopg import Connection
 from psycopg_pool import ConnectionPool
 
-_ENV_FILE = Path(__file__).resolve().parent.parent.parent / ".env"
+_PKG_ENV_FILE = Path(__file__).resolve().parent.parent.parent / ".env"
+
+
+def _find_env_file() -> Path | None:
+    """Find .env file: CWD first, then package source root."""
+    cwd_env = Path.cwd() / ".env"
+    if cwd_env.is_file():
+        return cwd_env
+    if _PKG_ENV_FILE.is_file():
+        return _PKG_ENV_FILE
+    return None
+
+
+# Keep backward-compatible alias for existing imports (e.g. tests)
+_ENV_FILE = _PKG_ENV_FILE
 
 
 def _load_env() -> None:
     """Load .env file if it exists. Uses override=False so existing
     environment variables are never silently overwritten (R-001)."""
-    if _ENV_FILE.is_file():
-        load_dotenv(_ENV_FILE, override=False)
+    env_file = _find_env_file()
+    if env_file is not None:
+        load_dotenv(env_file, override=False)
 
 
 def _load_db_config() -> dict[str, str | int]:

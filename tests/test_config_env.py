@@ -17,7 +17,7 @@ import pytest
 from typer.testing import CliRunner
 
 from kgn.cli import app
-from kgn.db.connection import _load_env
+from kgn.db.connection import _find_env_file, _load_env
 
 runner = CliRunner()
 
@@ -25,6 +25,37 @@ runner = CliRunner()
 # ══════════════════════════════════════════════════════════════════════
 #  R-001: .env override=False + existence check
 # ══════════════════════════════════════════════════════════════════════
+
+
+class TestFindEnvFile:
+    """Tests for _find_env_file() CWD-first resolution logic."""
+
+    def test_cwd_env_takes_priority(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        """CWD .env is returned when it exists."""
+        cwd_env = tmp_path / ".env"
+        cwd_env.write_text("# cwd\n")
+        monkeypatch.chdir(tmp_path)
+        result = _find_env_file()
+        assert result == cwd_env
+
+    def test_pkg_env_fallback(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Package root .env is returned when CWD has none."""
+        monkeypatch.chdir(tmp_path)  # tmp_path has no .env
+        pkg_env = tmp_path / "pkg" / ".env"
+        pkg_env.parent.mkdir()
+        pkg_env.write_text("# pkg\n")
+        with patch("kgn.db.connection._PKG_ENV_FILE", pkg_env):
+            result = _find_env_file()
+        assert result == pkg_env
+
+    def test_returns_none_when_no_env(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """None is returned when no .env exists anywhere."""
+        monkeypatch.chdir(tmp_path)
+        with patch("kgn.db.connection._PKG_ENV_FILE", tmp_path / "nonexistent" / ".env"):
+            result = _find_env_file()
+        assert result is None
 
 
 class TestEnvOverride:
@@ -40,7 +71,7 @@ class TestEnvOverride:
         # Set environment variable first
         monkeypatch.setenv("KGN_DB_HOST", "from-env")
 
-        with patch("kgn.db.connection._ENV_FILE", env_file):
+        with patch("kgn.db.connection._find_env_file", return_value=env_file):
             _load_env()
 
         # override=False keeps existing env var
@@ -55,7 +86,7 @@ class TestEnvOverride:
 
         monkeypatch.delenv("KGN_TEST_STEP4_VAR", raising=False)
 
-        with patch("kgn.db.connection._ENV_FILE", env_file):
+        with patch("kgn.db.connection._find_env_file", return_value=env_file):
             _load_env()
 
         assert os.environ.get("KGN_TEST_STEP4_VAR") == "from-file"
@@ -65,8 +96,7 @@ class TestEnvOverride:
 
     def test_no_env_file_does_not_crash(self, tmp_path: Path) -> None:
         """No error even when .env file does not exist."""
-        fake_path = tmp_path / "nonexistent.env"
-        with patch("kgn.db.connection._ENV_FILE", fake_path):
+        with patch("kgn.db.connection._find_env_file", return_value=None):
             _load_env()  # should not raise
 
 
