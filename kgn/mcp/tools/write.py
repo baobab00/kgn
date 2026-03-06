@@ -52,9 +52,10 @@ def register_write_tools(server: FastMCP) -> None:
                 parsed = parse_kgn_text(kgn_content)
                 content_project = parsed.front_matter.project_id
                 if content_project != server._kgn_project_name:  # type: ignore[attr-defined]
+                    srv = server._kgn_project_name  # type: ignore[attr-defined]
                     project_warning = (
-                        f"project_id in content is '{content_project}' but server project is "
-                        f"'{server._kgn_project_name}'. Node stored under '{server._kgn_project_name}'."
+                        f"project_id '{content_project}' differs from server "
+                        f"project '{srv}'. Node stored under '{srv}'."
                     )
             except Exception:  # noqa: BLE001
                 pass  # parse error handled by IngestService below
@@ -177,9 +178,10 @@ def register_write_tools(server: FastMCP) -> None:
                 parsed_edges = parse_kge_text(kge_content)
                 content_project = parsed_edges.project_id
                 if content_project != server._kgn_project_name:  # type: ignore[attr-defined]
+                    srv = server._kgn_project_name  # type: ignore[attr-defined]
                     edge_project_warning = (
-                        f"project_id in content is '{content_project}' but server project is "
-                        f"'{server._kgn_project_name}'. Edges stored under '{server._kgn_project_name}'."
+                        f"project_id '{content_project}' differs from server "
+                        f"project '{srv}'. Edges stored under '{srv}'."
                     )
             except Exception:  # noqa: BLE001
                 pass  # parse error handled by IngestService below
