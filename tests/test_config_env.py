@@ -40,7 +40,7 @@ class TestEnvOverride:
         # Set environment variable first
         monkeypatch.setenv("KGN_DB_HOST", "from-env")
 
-        with patch("kgn.db.connection._ENV_FILE", env_file):
+        with patch("kgn.db.connection._find_env_file", return_value=env_file):
             _load_env()
 
         # override=False keeps existing env var
@@ -55,7 +55,7 @@ class TestEnvOverride:
 
         monkeypatch.delenv("KGN_TEST_STEP4_VAR", raising=False)
 
-        with patch("kgn.db.connection._ENV_FILE", env_file):
+        with patch("kgn.db.connection._find_env_file", return_value=env_file):
             _load_env()
 
         assert os.environ.get("KGN_TEST_STEP4_VAR") == "from-file"
@@ -65,8 +65,7 @@ class TestEnvOverride:
 
     def test_no_env_file_does_not_crash(self, tmp_path: Path) -> None:
         """No error even when .env file does not exist."""
-        fake_path = tmp_path / "nonexistent.env"
-        with patch("kgn.db.connection._ENV_FILE", fake_path):
+        with patch("kgn.db.connection._find_env_file", return_value=None):
             _load_env()  # should not raise
 
 
