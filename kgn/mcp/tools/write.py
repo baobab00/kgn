@@ -46,7 +46,21 @@ def register_write_tools(server: FastMCP) -> None:
                 role=agent_role_default,
             )
 
-            # ── Role guard: pre-parse to check node type permission ───
+            # ── Pre-parse for guards and project mismatch detection ─
+            project_warning: str | None = None
+            try:
+                parsed = parse_kgn_text(kgn_content)
+                content_project = parsed.front_matter.project_id
+                if content_project != server._kgn_project_name:  # type: ignore[attr-defined]
+                    srv = server._kgn_project_name  # type: ignore[attr-defined]
+                    project_warning = (
+                        f"project_id '{content_project}' differs from server "
+                        f"project '{srv}'. Node stored under '{srv}'."
+                    )
+            except Exception:  # noqa: BLE001
+                pass  # parse error handled by IngestService below
+
+            # ── Role guard ────────────────────────────────────────────
             agent_role_str = repo.get_agent_role(agent_id) or "admin"
             try:
                 agent_role = AgentRole(agent_role_str)
@@ -55,8 +69,7 @@ def register_write_tools(server: FastMCP) -> None:
 
             if agent_role != AgentRole.ADMIN:
                 try:
-                    parsed = parse_kgn_text(kgn_content)
-                    node_type = NodeType(parsed.front_matter.type)
+                    node_type = NodeType(parsed.front_matter.type)  # noqa: F821
                     RoleGuard.check_node_create(agent_role, node_type)
                 except KgnError:
                     raise  # permission denied — propagate
@@ -131,10 +144,15 @@ def register_write_tools(server: FastMCP) -> None:
             embedding=embed_status,
             duration_ms=elapsed_ms,
         )
-        return json.dumps(
-            {"status": "ok", "node_id": str(node_id), "embedding": embed_status},
-            ensure_ascii=False,
-        )
+        response: dict = {
+            "status": "ok",
+            "node_id": str(node_id),
+            "project": server._kgn_project_name,  # type: ignore[attr-defined]
+            "embedding": embed_status,
+        }
+        if project_warning:
+            response["warning"] = project_warning
+        return json.dumps(response, ensure_ascii=False)
 
     @server.tool(
         name="ingest_edge",
@@ -154,7 +172,21 @@ def register_write_tools(server: FastMCP) -> None:
                 role=agent_role_default,
             )
 
-            # ── Role guard: pre-parse to check edge type permission ───
+            # ── Pre-parse for guards and project mismatch detection ─
+            edge_project_warning: str | None = None
+            try:
+                parsed_edges = parse_kge_text(kge_content)
+                content_project = parsed_edges.project_id
+                if content_project != server._kgn_project_name:  # type: ignore[attr-defined]
+                    srv = server._kgn_project_name  # type: ignore[attr-defined]
+                    edge_project_warning = (
+                        f"project_id '{content_project}' differs from server "
+                        f"project '{srv}'. Edges stored under '{srv}'."
+                    )
+            except Exception:  # noqa: BLE001
+                pass  # parse error handled by IngestService below
+
+            # ── Role guard ────────────────────────────────────────────
             agent_role_str = repo.get_agent_role(agent_id) or "admin"
             try:
                 agent_role = AgentRole(agent_role_str)
@@ -163,8 +195,7 @@ def register_write_tools(server: FastMCP) -> None:
 
             if agent_role != AgentRole.ADMIN:
                 try:
-                    parsed_edges = parse_kge_text(kge_content)
-                    for edge_def in parsed_edges.edges:
+                    for edge_def in parsed_edges.edges:  # noqa: F821
                         edge_type = EdgeType(edge_def.type)
                         RoleGuard.check_edge_create(agent_role, edge_type)
                 except KgnError:
@@ -214,10 +245,14 @@ def register_write_tools(server: FastMCP) -> None:
             edge_count=edge_count,
             duration_ms=elapsed_ms,
         )
-        return json.dumps(
-            {"status": "ok", "edge_count": edge_count},
-            ensure_ascii=False,
-        )
+        response: dict = {
+            "status": "ok",
+            "edge_count": edge_count,
+            "project": server._kgn_project_name,  # type: ignore[attr-defined]
+        }
+        if edge_project_warning:
+            response["warning"] = edge_project_warning
+        return json.dumps(response, ensure_ascii=False)
 
     @server.tool(
         name="enqueue_task",

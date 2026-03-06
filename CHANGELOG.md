@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.3]
+
+### Added
+
+- `ingest_node` response includes `project` field showing actual storage project
+- `ingest_edge` response includes `project` field showing actual storage project
+- Project mismatch `warning` in responses when content `project_id` differs from server project
+
+### Changed
+
+- `__version__`: 0.11.2 → 0.11.3
+
 ## [0.11.2]
 
 ### Added
