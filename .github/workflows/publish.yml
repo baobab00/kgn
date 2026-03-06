@@ -44,35 +44,35 @@ jobs:
         run: uv build
 
       - name: Verify wheel contents
-        run: >-
-          python3 -c "
-          import zipfile, glob, sys;
-          whl = glob.glob('dist/*.whl')[0];
-          z = zipfile.ZipFile(whl);
-          sqls = [n for n in z.namelist() if n.endswith('.sql')];
-          print(f'SQL files in wheel: {len(sqls)}');
-          [print(f'  {s}') for s in sorted(sqls)];
+        run: |
+          python3 << 'PYEOF'
+          import zipfile, glob, sys
+          whl = glob.glob('dist/*.whl')[0]
+          z = zipfile.ZipFile(whl)
+          sqls = [n for n in z.namelist() if n.endswith('.sql')]
+          print(f'SQL files in wheel: {len(sqls)}')
+          [print(f'  {s}') for s in sorted(sqls)]
           sys.exit(0 if len(sqls) >= 6 else 1)
-          "
+          PYEOF
 
       - name: Verify version matches tag
         if: github.event_name == 'release'
-        run: >-
-          python3 -c "
-          import zipfile, glob, sys;
-          whl = glob.glob('dist/*.whl')[0];
-          z = zipfile.ZipFile(whl);
-          meta = [n for n in z.namelist() if n.endswith('METADATA')][0];
-          lines = z.read(meta).decode().splitlines();
-          ver = [l.split(': ',1)[1] for l in lines if l.startswith('Version: ')][0];
-          tag = '${{ github.event.release.tag_name }}'.lstrip('v');
-          print(f'Wheel version: {ver}');
-          print(f'Tag version:   {tag}');
+        run: |
+          python3 << 'PYEOF'
+          import zipfile, glob, sys
+          whl = glob.glob('dist/*.whl')[0]
+          z = zipfile.ZipFile(whl)
+          meta = [n for n in z.namelist() if n.endswith('METADATA')][0]
+          lines = z.read(meta).decode().splitlines()
+          ver = [l.split(': ',1)[1] for l in lines if l.startswith('Version: ')][0]
+          tag = '${{ github.event.release.tag_name }}'.lstrip('v')
+          print(f'Wheel version: {ver}')
+          print(f'Tag version:   {tag}')
           if ver != tag:
-              print('ERROR: version mismatch!');
-              sys.exit(1);
+              print('ERROR: version mismatch!')
+              sys.exit(1)
           print('OK: versions match')
-          "
+          PYEOF
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
