@@ -193,7 +193,13 @@ kgn query nodes --project my-first-project --type SPEC
    - **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
    - **Mac:** `~/Library/Application Support/Claude/claude_desktop_config.json`
 
-2. 파일에 다음 내용을 추가하세요:
+2. 자동 설정 명령을 실행하세요:
+
+```bash
+kgn mcp init --project my-first-project --target claude-desktop
+```
+
+또는 수동으로 파일에 다음 내용을 추가하세요:
 
 ```json
 {
@@ -217,6 +223,10 @@ kgn query nodes --project my-first-project --type SPEC
 ### Claude Code (터미널) 연결
 
 ```bash
+# 프로젝트 디렉토리에 .mcp.json 자동 생성:
+kgn mcp init --project my-first-project
+
+# 또는 수동으로:
 claude mcp add kgn -- kgn mcp serve --project my-first-project --role admin
 ```
 
@@ -335,6 +345,7 @@ docker compose -f docker/docker-compose.yml up -d postgres
 | 폴더 전체 추가 | `kgn ingest <폴더>/ --project <이름> --recursive` |
 | 상태 확인 | `kgn status --project <이름>` |
 | 노드 검색 | `kgn query nodes --project <이름>` |
+| MCP 클라이언트 설정 | `kgn mcp init --project <이름> [--target claude-code]` |
 | MCP 서버 시작 | `kgn mcp serve --project <이름> [--role admin]` |
 | 웹 대시보드 | `kgn web serve --project <이름>` |
 | 전체 명령어 보기 | `kgn --help` |
