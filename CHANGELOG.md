@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.4]
+
+### Added
+
+- `kgn mcp init` command — auto-generate MCP client config files
+  - `--target claude-code` (default): creates `.mcp.json` in project directory
+  - `--target claude-desktop`: creates/updates `claude_desktop_config.json`
+  - `--role` option for agent role configuration
+  - Merges with existing config files (preserves other MCP servers)
+  - Auto-detects `uv` path and kgn source directory
+
+### Changed
+
+- `__version__`: 0.11.3 → 0.11.4
+
 ## [0.11.3]
 
 ### Added

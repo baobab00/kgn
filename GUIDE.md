@@ -193,7 +193,13 @@ This is where KGN really shines — letting Claude access your knowledge graph.
    - **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
    - **Mac:** `~/Library/Application Support/Claude/claude_desktop_config.json`
 
-2. Add this to the file:
+2. Run the auto-config command:
+
+```bash
+kgn mcp init --project my-first-project --target claude-desktop
+```
+
+Or manually add to the file:
 
 ```json
 {
@@ -217,6 +223,10 @@ Now Claude can read, search, and write to your knowledge graph.
 ### For Claude Code (Terminal)
 
 ```bash
+# Auto-generate .mcp.json in your project directory:
+kgn mcp init --project my-first-project
+
+# Or manually:
 claude mcp add kgn -- kgn mcp serve --project my-first-project --role admin
 ```
 
@@ -335,6 +345,7 @@ docker compose -f docker/docker-compose.yml up -d postgres
 | Add a whole folder | `kgn ingest <folder>/ --project <name> --recursive` |
 | Check status | `kgn status --project <name>` |
 | Search nodes | `kgn query nodes --project <name>` |
+| Setup MCP client | `kgn mcp init --project <name> [--target claude-code]` |
 | Start MCP server | `kgn mcp serve --project <name> [--role admin]` |
 | Web dashboard | `kgn web serve --project <name>` |
 | See all commands | `kgn --help` |
