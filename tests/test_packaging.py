@@ -25,6 +25,7 @@ EXPECTED_SQL_FILES = [
     "kgn/migrations/007_agent_roles.sql",
     "kgn/migrations/008_node_locks.sql",
     "kgn/migrations/009_conflict_activity_types.sql",
+    "kgn/migrations/010_node_versions_full_snapshot.sql",
 ]
 
 EXPECTED_PACKAGES = [
@@ -242,7 +243,7 @@ class TestMigrationsAccessibility:
         from kgn.db.migrations import MIGRATIONS_DIR
 
         sql_files = sorted(MIGRATIONS_DIR.glob("*.sql"))
-        assert len(sql_files) == 9, f"Expected 9 SQL files, got {len(sql_files)}: {sql_files}"
+        assert len(sql_files) == 10, f"Expected 10 SQL files, got {len(sql_files)}: {sql_files}"
 
     def test_migrations_filenames(self):
         from kgn.db.migrations import MIGRATIONS_DIR
@@ -258,6 +259,7 @@ class TestMigrationsAccessibility:
             "007_agent_roles.sql",
             "008_node_locks.sql",
             "009_conflict_activity_types.sql",
+            "010_node_versions_full_snapshot.sql",
         ]
         assert sql_names == expected
 
@@ -265,7 +267,7 @@ class TestMigrationsAccessibility:
         from kgn.db.migrations import _get_migration_files
 
         files = _get_migration_files()
-        assert len(files) == 9
+        assert len(files) == 10
 
 
 # ---------------------------------------------------------------------------

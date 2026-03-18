@@ -168,6 +168,94 @@ class TestUpsertNode:
         assert row[0] == 1  # version 1
         assert row[1] == "Original"
 
+    def test_version_captures_full_snapshot(
+        self,
+        repo: KgnRepository,
+        project_id: uuid.UUID,
+        db_conn: Connection,
+    ) -> None:
+        """Phase 12 / Step 2: _save_version stores all mutable fields."""
+        nid = uuid.uuid4()
+        n1 = NodeRecord(
+            id=nid,
+            project_id=project_id,
+            type=NodeType.GOAL,
+            status=NodeStatus.ACTIVE,
+            title="Original Title",
+            body_md="Original body",
+            file_path="/path/original.kgn",
+            tags=["tag-a", "tag-b"],
+            confidence=0.85,
+            content_hash="hash-v1",
+        )
+        repo.upsert_node(n1)
+
+        # Now update the node with different values for ALL fields
+        n2 = NodeRecord(
+            id=nid,
+            project_id=project_id,
+            type=NodeType.DECISION,
+            status=NodeStatus.DEPRECATED,
+            title="Updated Title",
+            body_md="Updated body",
+            file_path="/path/updated.kgn",
+            tags=["tag-c"],
+            confidence=0.5,
+            content_hash="hash-v2",
+        )
+        repo.upsert_node(n2)
+
+        # Version 1 should capture n1's FULL state
+        ver = repo.get_latest_node_version(nid)
+        assert ver is not None
+        assert ver["title"] == "Original Title"
+        assert ver["body_md"] == "Original body"
+        assert ver["content_hash"] == "hash-v1"
+        assert ver["type"] == "GOAL"
+        assert ver["status"] == "ACTIVE"
+        assert ver["file_path"] == "/path/original.kgn"
+        assert ver["tags"] == ["tag-a", "tag-b"]
+        assert ver["confidence"] == pytest.approx(0.85)
+
+    def test_get_node_version_includes_new_columns(
+        self,
+        repo: KgnRepository,
+        project_id: uuid.UUID,
+    ) -> None:
+        """get_node_version() returns type/status/file_path/tags/confidence."""
+        nid = uuid.uuid4()
+        n1 = NodeRecord(
+            id=nid,
+            project_id=project_id,
+            type=NodeType.SPEC,
+            status=NodeStatus.ACTIVE,
+            title="V1",
+            body_md="body1",
+            content_hash="h1",
+            tags=["x"],
+            confidence=0.9,
+        )
+        repo.upsert_node(n1)
+
+        # Trigger version creation by updating
+        n2 = NodeRecord(
+            id=nid,
+            project_id=project_id,
+            type=NodeType.SPEC,
+            status=NodeStatus.ACTIVE,
+            title="V2",
+            body_md="body2",
+            content_hash="h2",
+        )
+        repo.upsert_node(n2)
+
+        ver = repo.get_node_version(nid, 1)
+        assert ver is not None
+        assert "type" in ver
+        assert "status" in ver
+        assert "tags" in ver
+        assert "confidence" in ver
+
 
 # ── Node queries ───────────────────────────────────────────────────────
 

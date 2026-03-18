@@ -15,6 +15,7 @@ Scenarios:
 
 from __future__ import annotations
 
+import os
 import uuid
 from collections.abc import Generator
 from contextlib import contextmanager
@@ -596,3 +597,86 @@ class TestE2EWebNotInstalled:
                 sys.modules["fastapi"] = original
             elif "fastapi" in sys.modules:
                 del sys.modules["fastapi"]
+
+
+# ── Scenario 7: API Key Middleware ─────────────────────────────────────
+
+
+class TestAPIKeyMiddleware:
+    """Verify optional API key middleware (I-08 security hardening)."""
+
+    def _make_app(self, api_key: str = "") -> "FastAPI":
+        """Create app with optional API key, bypassing module-level cache."""
+        import importlib
+        import sys
+
+        with patch.dict(os.environ, {"KGN_API_KEY": api_key}, clear=False):
+            # Force re-import so create_app picks up env var
+            mod_name = "kgn.web.app"
+            if mod_name in sys.modules:
+                del sys.modules[mod_name]
+            mod = importlib.import_module(mod_name)
+            return mod.create_app("test-proj", uuid.uuid4())
+
+    def test_no_key_configured_allows_all(self, db_conn: Connection) -> None:
+        """Without KGN_API_KEY, all endpoints are open."""
+        from fastapi.testclient import TestClient
+
+        app = self._make_app("")
+        patches = _all_patches(db_conn)
+        active = _enter_patches(patches)
+        try:
+            client = TestClient(app)
+            resp = client.get("/api/v1/health")
+            assert resp.status_code == 200
+            resp = client.get("/api/v1/nodes")
+            assert resp.status_code == 200
+        finally:
+            _exit_patches(active)
+
+    def test_valid_key_allows_access(self, db_conn: Connection) -> None:
+        """With correct X-API-Key header, endpoints are accessible."""
+        from fastapi.testclient import TestClient
+
+        app = self._make_app("secret-key-42")
+        patches = _all_patches(db_conn)
+        active = _enter_patches(patches)
+        try:
+            client = TestClient(app)
+            resp = client.get(
+                "/api/v1/nodes", headers={"X-API-Key": "secret-key-42"}
+            )
+            assert resp.status_code == 200
+        finally:
+            _exit_patches(active)
+
+    def test_invalid_key_returns_401(self) -> None:
+        """With wrong API key, endpoints return 401."""
+        from fastapi.testclient import TestClient
+
+        app = self._make_app("secret-key-42")
+        client = TestClient(app)
+        resp = client.get("/api/v1/nodes", headers={"X-API-Key": "wrong-key"})
+        assert resp.status_code == 401
+        assert "Invalid or missing API key" in resp.json()["detail"]
+
+    def test_missing_key_returns_401(self) -> None:
+        """Without API key header, protected endpoints return 401."""
+        from fastapi.testclient import TestClient
+
+        app = self._make_app("secret-key-42")
+        client = TestClient(app)
+        resp = client.get("/api/v1/nodes")
+        assert resp.status_code == 401
+
+    def test_health_exempt_from_key(self) -> None:
+        """Health endpoint is accessible even when API key is required."""
+        from fastapi.testclient import TestClient
+
+        app = self._make_app("secret-key-42")
+        client = TestClient(app)
+        resp = client.get("/api/v1/health")
+        # Health still goes through, but it needs the DB connection mock.
+        # Even without mocking, the middleware should NOT block it.
+        # The response might be 500 (no DB) but NOT 401.
+        assert resp.status_code != 401

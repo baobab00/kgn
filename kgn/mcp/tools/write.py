@@ -15,6 +15,7 @@ from kgn.errors import KgnError, KgnErrorCode
 from kgn.graph.subgraph import SubgraphService
 from kgn.ingest.service import IngestService
 from kgn.mcp._helpers import _error_json, _parse_uuid, safe_tool_call
+from kgn.mcp._state import get_state
 from kgn.models.enums import AgentRole, EdgeType, NodeType
 from kgn.orchestration.locking import NodeLockService
 from kgn.orchestration.roles import RoleGuard
@@ -37,13 +38,13 @@ def register_write_tools(server: FastMCP) -> None:
         t0 = time.monotonic()
         log.info("tool_called", tool="ingest_node")
 
-        with server._kgn_conn_factory() as c:  # type: ignore[attr-defined]
+        state = get_state(server)
+        with state.conn_factory() as c:
             repo = KgnRepository(c)
-            agent_role_default = getattr(server, "_kgn_agent_role", "admin")
             agent_id = repo.get_or_create_agent(
-                server._kgn_project_id,
-                "mcp",  # type: ignore[attr-defined]
-                role=agent_role_default,
+                state.project_id,
+                "mcp",
+                role=state.agent_role,
             )
 
             # ── Pre-parse for guards and project mismatch detection ─
@@ -51,11 +52,10 @@ def register_write_tools(server: FastMCP) -> None:
             try:
                 parsed = parse_kgn_text(kgn_content)
                 content_project = parsed.front_matter.project_id
-                if content_project != server._kgn_project_name:  # type: ignore[attr-defined]
-                    srv = server._kgn_project_name  # type: ignore[attr-defined]
+                if content_project != state.project_name:
                     project_warning = (
                         f"project_id '{content_project}' differs from server "
-                        f"project '{srv}'. Node stored under '{srv}'."
+                        f"project '{state.project_name}'. Node stored under '{state.project_name}'."
                     )
             except Exception:  # noqa: BLE001
                 pass  # parse error handled by IngestService below
@@ -65,7 +65,7 @@ def register_write_tools(server: FastMCP) -> None:
             try:
                 agent_role = AgentRole(agent_role_str)
             except ValueError:
-                agent_role = AgentRole.ADMIN
+                agent_role = AgentRole.INDEXER
 
             if agent_role != AgentRole.ADMIN:
                 try:
@@ -95,7 +95,7 @@ def register_write_tools(server: FastMCP) -> None:
 
             svc = IngestService(
                 repo,
-                server._kgn_project_id,  # type: ignore[attr-defined]
+                state.project_id,
                 agent_id,
                 enforce_project=True,
             )
@@ -126,11 +126,10 @@ def register_write_tools(server: FastMCP) -> None:
 
             # ── Auto-embed (R12: graceful degradation) ────────────────
             embed_status = "skipped"
-            embed_client = getattr(server, "_kgn_embed_client", None)
-            if embed_client is not None and node_id is not None:
+            if state.embed_client is not None and node_id is not None:
                 try:
-                    embed_svc = EmbeddingService(repo=repo, client=embed_client)
-                    embed_svc.embed_node(node_id, server._kgn_project_id)  # type: ignore[attr-defined]
+                    embed_svc = EmbeddingService(repo=repo, client=state.embed_client)
+                    embed_svc.embed_node(node_id, state.project_id)
                     embed_status = "success"
                 except Exception as exc:  # noqa: BLE001
                     log.warning("auto_embed_failed", node_id=str(node_id), error=str(exc))
@@ -147,7 +146,7 @@ def register_write_tools(server: FastMCP) -> None:
         response: dict = {
             "status": "ok",
             "node_id": str(node_id),
-            "project": server._kgn_project_name,  # type: ignore[attr-defined]
+            "project": state.project_name,
             "embedding": embed_status,
         }
         if project_warning:
@@ -163,13 +162,13 @@ def register_write_tools(server: FastMCP) -> None:
         t0 = time.monotonic()
         log.info("tool_called", tool="ingest_edge")
 
-        with server._kgn_conn_factory() as c:  # type: ignore[attr-defined]
+        state = get_state(server)
+        with state.conn_factory() as c:
             repo = KgnRepository(c)
-            agent_role_default = getattr(server, "_kgn_agent_role", "admin")
             agent_id = repo.get_or_create_agent(
-                server._kgn_project_id,
-                "mcp",  # type: ignore[attr-defined]
-                role=agent_role_default,
+                state.project_id,
+                "mcp",
+                role=state.agent_role,
             )
 
             # ── Pre-parse for guards and project mismatch detection ─
@@ -177,11 +176,10 @@ def register_write_tools(server: FastMCP) -> None:
             try:
                 parsed_edges = parse_kge_text(kge_content)
                 content_project = parsed_edges.project_id
-                if content_project != server._kgn_project_name:  # type: ignore[attr-defined]
-                    srv = server._kgn_project_name  # type: ignore[attr-defined]
+                if content_project != state.project_name:
                     edge_project_warning = (
                         f"project_id '{content_project}' differs from server "
-                        f"project '{srv}'. Edges stored under '{srv}'."
+                        f"project '{state.project_name}'. Edges stored under '{state.project_name}'."
                     )
             except Exception:  # noqa: BLE001
                 pass  # parse error handled by IngestService below
@@ -191,7 +189,7 @@ def register_write_tools(server: FastMCP) -> None:
             try:
                 agent_role = AgentRole(agent_role_str)
             except ValueError:
-                agent_role = AgentRole.ADMIN
+                agent_role = AgentRole.INDEXER
 
             if agent_role != AgentRole.ADMIN:
                 try:
@@ -205,7 +203,7 @@ def register_write_tools(server: FastMCP) -> None:
 
             svc = IngestService(
                 repo,
-                server._kgn_project_id,  # type: ignore[attr-defined]
+                state.project_id,
                 agent_id,
                 enforce_project=True,
             )
@@ -248,7 +246,7 @@ def register_write_tools(server: FastMCP) -> None:
         response: dict = {
             "status": "ok",
             "edge_count": edge_count,
-            "project": server._kgn_project_name,  # type: ignore[attr-defined]
+            "project": state.project_name,
         }
         if edge_project_warning:
             response["warning"] = edge_project_warning
@@ -268,12 +266,13 @@ def register_write_tools(server: FastMCP) -> None:
             log.warning("tool_error", tool="enqueue_task", error=f"Invalid UUID: {task_node_id}")
             return _error_json(f"Invalid UUID: {task_node_id}", KgnErrorCode.INVALID_UUID)
 
-        with server._kgn_conn_factory() as c:  # type: ignore[attr-defined]
+        state = get_state(server)
+        with state.conn_factory() as c:
             repo = KgnRepository(c)
             try:
                 svc = TaskService(repo, SubgraphService(repo))
                 result = svc.enqueue(
-                    server._kgn_project_id,  # type: ignore[attr-defined]
+                    state.project_id,
                     tid,
                     priority=priority,
                 )

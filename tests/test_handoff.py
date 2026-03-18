@@ -968,3 +968,112 @@ class TestRepositoryFindReadyDependents:
 
         dependents = repo.find_ready_dependents(upstream.id, project_id)
         assert len(dependents) == 0
+
+
+# ── Phase 12 / Step 3: Transitive contamination prevention ────────────
+
+
+class TestHandoffTransitiveContamination:
+    """Verify _strip_handoff_sections prevents geometric body growth."""
+
+    def test_strip_removes_handoff_section(self) -> None:
+        """_strip_handoff_sections removes ## Handoff Context and below."""
+        body = (
+            "## Original Work\n\nMy real content.\n\n"
+            "---\n\n"
+            "## Handoff Context\n\n"
+            "<!-- handoff:abc123 -->\n"
+            "### From: Old Task\n"
+            "- **Type**: TASK\n"
+            "Old body here."
+        )
+        result = HandoffService._strip_handoff_sections(body)
+        assert "## Handoff Context" not in result
+        assert "Old Task" not in result
+        assert "My real content." in result
+
+    def test_strip_preserves_body_without_handoff(self) -> None:
+        """Body without handoff section is returned unchanged."""
+        body = "## Original\n\nPure content."
+        result = HandoffService._strip_handoff_sections(body)
+        assert result == body
+
+    def test_strip_empty_body(self) -> None:
+        """Empty body returns empty string."""
+        assert HandoffService._strip_handoff_sections("") == ""
+
+    def test_strip_body_only_handoff(self) -> None:
+        """Body that is entirely a handoff section returns empty."""
+        body = "## Handoff Context\n\n<!-- handoff:x -->\ncontext only"
+        result = HandoffService._strip_handoff_sections(body)
+        assert "## Handoff Context" not in result
+
+    def test_three_stage_chain_no_transitive_contamination(
+        self,
+        repo: KgnRepository,
+        handoff_service: HandoffService,
+        task_service: TaskService,
+        project_id: uuid.UUID,
+        agent_id: uuid.UUID,
+    ):
+        """In A→B→C chain, C's handoff does NOT re-contain A's context."""
+        from kgn.models.edge import EdgeRecord
+
+        task_a = _make_task_node(
+            repo, project_id, agent_id,
+            title="Task A",
+            body_md="## A Result\n\nOriginal content from A.",
+        )
+        task_b = _make_task_node(
+            repo, project_id, agent_id,
+            title="Task B",
+            body_md="## B Content\n\nOriginal content from B.",
+        )
+        task_c = _make_task_node(
+            repo, project_id, agent_id,
+            title="Task C",
+            body_md="## C Content\n\nOriginal content from C.",
+        )
+
+        # B depends on A, C depends on B
+        repo.insert_edge(EdgeRecord(
+            project_id=project_id,
+            from_node_id=task_b.id, to_node_id=task_a.id,
+            type=EdgeType.DEPENDS_ON, created_by=agent_id,
+        ))
+        repo.insert_edge(EdgeRecord(
+            project_id=project_id,
+            from_node_id=task_c.id, to_node_id=task_b.id,
+            type=EdgeType.DEPENDS_ON, created_by=agent_id,
+        ))
+
+        _enqueue_task(repo, task_service, project_id, task_a)
+        _enqueue_task(repo, task_service, project_id, task_b)
+        _enqueue_task(repo, task_service, project_id, task_c)
+
+        # Complete A → injects into B
+        pkg_a = task_service.checkout(project_id, agent_id)
+        assert pkg_a is not None
+        task_service.complete(pkg_a.task.id)
+
+        # B now has A's handoff — read updated B
+        updated_b = repo.get_node_by_id(task_b.id)
+        assert "Original content from A" in updated_b.body_md
+
+        # Complete B → injects into C
+        pkg_b = task_service.checkout(project_id, agent_id)
+        assert pkg_b is not None
+        task_service.complete(pkg_b.task.id)
+
+        # C should have B's original content but NOT A's content re-included
+        updated_c = repo.get_node_by_id(task_c.id)
+        assert "Original content from B" in updated_c.body_md
+
+        # Count how many times A's unique content appears in C's body.
+        # It should appear at most once (via B's handoff summary),
+        # NOT duplicated from transitive leakage.
+        a_content_count = updated_c.body_md.count("Original content from A")
+        assert a_content_count <= 1, (
+            f"Transitive contamination: A's content appears {a_content_count} "
+            f"times in C's body_md"
+        )

@@ -7,6 +7,7 @@ from typing import Annotated
 import typer
 
 from kgn.cli._app import _project_not_found, console, embed_app
+from kgn.errors import KgnError
 
 # ── embed batch ────────────────────────────────────────────────────────
 
@@ -49,6 +50,9 @@ def embed_batch(
 
     except typer.Exit:
         raise
+    except KgnError as e:
+        console.print(f"\n[bold red][{e.code}] Error:[/bold red] {e}\n")
+        raise typer.Exit(code=1) from e
     except Exception as e:
         console.print(f"\n[bold red]Error:[/bold red] {e}\n")
         raise typer.Exit(code=1) from e
@@ -84,6 +88,9 @@ def embed_provider_test() -> None:
         else:
             console.print("[red]❌ Unexpected response shape.[/red]\n")
             raise typer.Exit(code=1)
+    except KgnError as e:
+        console.print(f"[bold red][{e.code}] Error:[/bold red] {e}")
+        raise typer.Exit(code=1) from e
     except Exception as e:
         console.print(f"[red]❌ Connection failed: {e}[/red]\n")
         raise typer.Exit(code=1) from e

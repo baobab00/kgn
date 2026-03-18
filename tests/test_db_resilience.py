@@ -212,12 +212,13 @@ class TestMCPToolDBFailure:
 
     def _set_failing_factory(self, server, exc):
         """Replace server's connection factory with one that raises exc."""
+        from kgn.mcp._state import get_state
 
         @contextmanager
         def _failing():
             raise exc
 
-        server._kgn_conn_factory = _failing  # noqa: SLF001
+        get_state(server).conn_factory = _failing
 
     def test_get_node_pool_timeout(self, server_with_failing_conn) -> None:
         """get_node returns KGN-101 when pool is exhausted."""

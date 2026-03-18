@@ -500,6 +500,83 @@ class TestResolveConflict:
         assert reverted is not None
         assert "Agent A version" in reverted.body_md
 
+    def test_accept_a_restores_all_fields(
+        self,
+        conflict_svc: ConflictResolutionService,
+        repo: KgnRepository,
+        project_id: uuid.UUID,
+        agent_id: uuid.UUID,
+    ) -> None:
+        """accept_a should restore type, status, file_path, tags, confidence
+        from the full version snapshot (Phase 12 / Step 7)."""
+        # 1. Create base node
+        node = NodeRecord(
+            id=uuid.uuid4(),
+            project_id=project_id,
+            type=NodeType.SPEC,
+            status=NodeStatus.ACTIVE,
+            title="Full Restore Test",
+            body_md="## Content\n\nOriginal body.",
+            content_hash=uuid.uuid4().hex,
+            created_by=agent_id,
+        )
+        repo.upsert_node(node)
+
+        # 2. Agent A updates ALL mutable fields
+        agent_a_update = NodeRecord(
+            id=node.id,
+            project_id=project_id,
+            type=NodeType.GOAL,
+            status=NodeStatus.SUPERSEDED,
+            title="Agent A Title",
+            body_md="## Content\n\nAgent A body.",
+            file_path="docs/agent_a.kgn",
+            content_hash=uuid.uuid4().hex,
+            tags=["alpha", "test"],
+            confidence=0.85,
+            created_by=agent_id,
+        )
+        repo.upsert_node(agent_a_update)
+
+        # 3. Agent B overwrites with different values
+        agent_b = _make_second_agent(repo, project_id)
+        agent_b_update = NodeRecord(
+            id=node.id,
+            project_id=project_id,
+            type=NodeType.DECISION,
+            status=NodeStatus.DEPRECATED,
+            title="Agent B Title",
+            body_md="## Content\n\nAgent B body.",
+            file_path="docs/agent_b.kgn",
+            content_hash=uuid.uuid4().hex,
+            tags=["beta"],
+            confidence=0.3,
+            created_by=agent_b,
+        )
+        repo.upsert_node(agent_b_update)
+
+        # 4. Create review task
+        conflict_svc.create_review_task(
+            project_id, node.id, agent_id, agent_b,
+        )
+
+        # 5. Resolve with accept_a
+        result = conflict_svc.resolve(
+            project_id, node.id, "accept_a", agent_id=agent_id,
+        )
+        assert result.resolution == "accept_a"
+
+        # 6. Verify ALL fields restored to Agent A's version
+        reverted = repo.get_node_by_id(node.id)
+        assert reverted is not None
+        assert reverted.title == "Agent A Title"
+        assert reverted.body_md == "## Content\n\nAgent A body."
+        assert reverted.type == NodeType.GOAL
+        assert reverted.status == NodeStatus.SUPERSEDED
+        assert reverted.file_path == "docs/agent_a.kgn"
+        assert reverted.tags == ["alpha", "test"]
+        assert reverted.confidence == pytest.approx(0.85)
+
     def test_accept_b_keeps_current(
         self,
         conflict_svc: ConflictResolutionService,

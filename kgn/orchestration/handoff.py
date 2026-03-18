@@ -12,6 +12,7 @@ Rule compliance:
 
 from __future__ import annotations
 
+import re
 import uuid
 from dataclasses import dataclass, field
 
@@ -114,9 +115,10 @@ class HandoffService:
         # 3. Build handoff context
         context_block = self._build_context_block(completed_node)
 
-        # 4. Inject context into each dependent's body_md
+        # 4. Inject context into each dependent's body_md (batch fetch)
+        dep_nodes_map = self._repo.get_nodes_by_ids(all_dependent_node_ids)
         for dep_node_id in all_dependent_node_ids:
-            dep_node = self._repo.get_node_by_id(dep_node_id)
+            dep_node = dep_nodes_map.get(dep_node_id)
             if dep_node is None:
                 continue
 
@@ -171,10 +173,29 @@ class HandoffService:
         """
         return self._repo.find_ready_dependents(completed_node_id, project_id)
 
+    @staticmethod
+    def _strip_handoff_sections(body: str) -> str:
+        """Remove all ``## Handoff Context`` sections from *body*.
+
+        This prevents transitive contamination: when node B already
+        contains handoff context from node A, propagating B's body
+        into node C would re-include A's context, causing geometric
+        growth.  Stripping ensures only the original content is
+        forwarded.
+        """
+        # Remove the section header and everything after it up to the
+        # next ``## `` heading (or end of string).  Also strip leading
+        # ``---`` separator that _append_context adds.
+        pattern = r"(\n*---\n*)?" + re.escape(HANDOFF_SECTION_HEADER) + r".*?(?=\n## |\Z)"
+        stripped = re.sub(pattern, "", body, flags=re.DOTALL).rstrip()
+        return stripped
+
     def _build_context_block(self, completed_node) -> str:
         """Build a handoff context markdown block from a completed node."""
-        # Extract meaningful body: strip existing handoff sections
-        body = completed_node.body_md or ""
+        # Strip existing handoff sections to prevent transitive contamination
+        body = self._strip_handoff_sections(completed_node.body_md or "")
+        if not body.strip():
+            body = "(no original content)"
         # Truncate body to reasonable length for handoff
         max_body_len = 2000
         if len(body) > max_body_len:

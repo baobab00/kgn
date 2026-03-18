@@ -13,6 +13,7 @@ from kgn.db.repository import KgnRepository
 from kgn.errors import KgnError, KgnErrorCode
 from kgn.graph.subgraph import SubgraphService
 from kgn.mcp._helpers import _error_json, _parse_uuid, safe_tool_call
+from kgn.mcp._state import get_state
 from kgn.models.enums import AgentRole
 from kgn.orchestration.roles import RoleGuard
 from kgn.task.formatter import HandoffFormatter
@@ -33,7 +34,8 @@ def register_task_tools(server: FastMCP) -> None:
         t0 = time.monotonic()
         log.info("tool_called", tool="task_checkout", project=project, agent=agent)
 
-        with server._kgn_conn_factory() as c:  # type: ignore[attr-defined]
+        state = get_state(server)
+        with state.conn_factory() as c:
             repo = KgnRepository(c)
             pid = repo.get_project_by_name(project)
             if pid is None:
@@ -44,15 +46,14 @@ def register_task_tools(server: FastMCP) -> None:
                 )
                 return _error_json(f"Project not found: {project}", KgnErrorCode.PROJECT_NOT_FOUND)
 
-            agent_role_default = getattr(server, "_kgn_agent_role", "admin")
-            agent_id = repo.get_or_create_agent(pid, agent, role=agent_role_default)
+            agent_id = repo.get_or_create_agent(pid, agent, role=state.agent_role)
 
             # ── Role guard: check task checkout permission ────────────
             agent_role_str = repo.get_agent_role(agent_id) or "admin"
             try:
                 agent_role = AgentRole(agent_role_str)
             except ValueError:
-                agent_role = AgentRole.ADMIN
+                agent_role = AgentRole.INDEXER
             RoleGuard.check_task_checkout(agent_role)
 
             svc = TaskService(repo, SubgraphService(repo))
@@ -96,7 +97,8 @@ def register_task_tools(server: FastMCP) -> None:
             log.warning("tool_error", tool="task_complete", error=f"Invalid UUID: {task_id}")
             return _error_json(f"Invalid UUID: {task_id}", KgnErrorCode.INVALID_UUID)
 
-        with server._kgn_conn_factory() as c:  # type: ignore[attr-defined]
+        state = get_state(server)
+        with state.conn_factory() as c:
             repo = KgnRepository(c)
             try:
                 svc = TaskService(repo, SubgraphService(repo))
@@ -137,7 +139,8 @@ def register_task_tools(server: FastMCP) -> None:
             log.warning("tool_error", tool="task_fail", error=f"Invalid UUID: {task_id}")
             return _error_json(f"Invalid UUID: {task_id}", KgnErrorCode.INVALID_UUID)
 
-        with server._kgn_conn_factory() as c:  # type: ignore[attr-defined]
+        state = get_state(server)
+        with state.conn_factory() as c:
             repo = KgnRepository(c)
             try:
                 svc = TaskService(repo, SubgraphService(repo))

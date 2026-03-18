@@ -9,6 +9,7 @@ import typer
 from rich.table import Table
 
 from kgn.cli._app import _project_not_found, console, query_app
+from kgn.errors import KgnError
 
 # ── query nodes ────────────────────────────────────────────────────────
 
@@ -64,6 +65,9 @@ def query_nodes(
 
     except typer.Exit:
         raise
+    except KgnError as e:
+        console.print(f"\n[bold red][{e.code}] Error:[/bold red] {e}\n")
+        raise typer.Exit(code=1) from e
     except Exception as e:
         console.print(f"\n[bold red]Error:[/bold red] {e}\n")
         raise typer.Exit(code=1) from e
@@ -119,6 +123,9 @@ def query_subgraph(
 
     except typer.Exit:
         raise
+    except KgnError as e:
+        console.print(f"\n[bold red][{e.code}] Error:[/bold red] {e}\n")
+        raise typer.Exit(code=1) from e
     except Exception as e:
         console.print(f"\n[bold red]Error:[/bold red] {e}\n")
         raise typer.Exit(code=1) from e
@@ -183,6 +190,9 @@ def query_similar(
 
     except typer.Exit:
         raise
+    except KgnError as e:
+        console.print(f"\n[bold red][{e.code}] Error:[/bold red] {e}\n")
+        raise typer.Exit(code=1) from e
     except Exception as e:
         console.print(f"\n[bold red]Error:[/bold red] {e}\n")
         raise typer.Exit(code=1) from e

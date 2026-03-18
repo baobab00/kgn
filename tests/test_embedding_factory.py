@@ -305,7 +305,8 @@ class TestServerEmbeddingInjection:
 
         server = create_server(project_name, conn=db_conn)
         # No API key → factory returns None
-        assert server._kgn_embed_client is None  # type: ignore[attr-defined]
+        from kgn.mcp._state import get_state
+        assert get_state(server).embed_client is None
 
     def test_explicit_none_disables_embedding(self, db_conn, repo) -> None:
         """Explicit None disables embedding."""
@@ -315,7 +316,8 @@ class TestServerEmbeddingInjection:
         repo.get_or_create_project(project_name)
 
         server = create_server(project_name, conn=db_conn, embedding_client=None)
-        assert server._kgn_embed_client is None  # type: ignore[attr-defined]
+        from kgn.mcp._state import get_state
+        assert get_state(server).embed_client is None
 
     def test_explicit_mock_client_injected(self, db_conn, repo) -> None:
         """Explicit MockEmbeddingClient is stored on server."""
@@ -326,7 +328,8 @@ class TestServerEmbeddingInjection:
         mock = MockEmbeddingClient()
 
         server = create_server(project_name, conn=db_conn, embedding_client=mock)
-        assert server._kgn_embed_client is mock  # type: ignore[attr-defined]
+        from kgn.mcp._state import get_state
+        assert get_state(server).embed_client is mock
 
 
 # ══════════════════════════════════════════════════════════════════════

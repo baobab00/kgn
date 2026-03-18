@@ -52,8 +52,10 @@ class TestCreateServer:
 
         server = create_server(project_name, conn=db_conn)
 
-        assert server._kgn_project_id == pid  # noqa: SLF001
-        assert server._kgn_project_name == project_name  # noqa: SLF001
+        from kgn.mcp._state import get_state
+        state = get_state(server)
+        assert state.project_id == pid
+        assert state.project_name == project_name
 
     def test_nonexistent_project_raises_system_exit(self) -> None:
         """Non-existent project name raises SystemExit."""

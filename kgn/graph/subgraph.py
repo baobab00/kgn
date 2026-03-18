@@ -14,6 +14,11 @@ from dataclasses import asdict, dataclass, field
 from kgn.db.repository import KgnRepository, SubgraphNode
 from kgn.models.enums import EdgeType, NodeStatus
 
+# ── Constants ──────────────────────────────────────────────────────────
+
+MAX_SUBGRAPH_DEPTH = 5
+"""Hard upper bound for BFS depth to prevent DoS via unbounded traversal."""
+
 # ── Result types ───────────────────────────────────────────────────────
 
 
@@ -60,13 +65,14 @@ class SubgraphService:
         Parameters:
             root_id: Starting node UUID.
             project_id: Project scope.
-            depth: Max BFS hops.
+            depth: Max BFS hops (clamped to MAX_SUBGRAPH_DEPTH).
             edge_types: Optional edge type filter.
             include_archived: If False (default), ARCHIVED nodes are excluded.
 
         Returns:
             SubgraphResult with nodes and edges.
         """
+        depth = min(depth, MAX_SUBGRAPH_DEPTH)
         raw_nodes = self._repo.extract_subgraph(
             root_id=root_id,
             project_id=project_id,

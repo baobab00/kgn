@@ -11,7 +11,7 @@
 [![Python 3.12+](https://img.shields.io/pypi/pyversions/kgn-mcp?v=1)](https://pypi.org/project/kgn-mcp/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![codecov](https://codecov.io/gh/baobab00/kgn/graph/badge.svg)](https://codecov.io/gh/baobab00/kgn)
-[![Tests](https://img.shields.io/badge/tests-2029%2B%20passing-brightgreen)](https://github.com/baobab00/kgn/actions)
+[![Tests](https://img.shields.io/badge/tests-2081%2B%20passing-brightgreen)](https://github.com/baobab00/kgn/actions)
 [![Code style: ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
 > **Manage your AI agent's knowledge — parse, store, query, and collaborate.**
@@ -410,7 +410,7 @@ uv run pytest --cov=kgn --cov-report=term-missing
 | **Web** | FastAPI + Uvicorn + Jinja2 + Cytoscape.js (optional extra) |
 | **IDE** | VS Code extension + pygls LSP (optional extra) |
 | **Infra** | Docker Compose + GitHub Actions CI |
-| **Quality** | [ruff](https://docs.astral.sh/ruff/) + pytest (2031 tests, 93%+ coverage) |
+| **Quality** | [ruff](https://docs.astral.sh/ruff/) + pytest (2081+ tests, 93%+ coverage) |
 
 ## License
 

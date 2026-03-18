@@ -55,3 +55,35 @@ class TestRunMigrations:
         applied = run_migrations(db_conn)
         # All migrations should be skipped (0 newly applied)
         assert applied == []
+
+
+class TestMigration010NodeVersionsFullSnapshot:
+    """Verify migration 010 adds the 5 new columns to node_versions."""
+
+    def test_new_columns_exist(self, db_conn) -> None:
+        """After migration, node_versions has type/status/file_path/tags/confidence."""
+        row = db_conn.execute(
+            "SELECT column_name FROM information_schema.columns "
+            "WHERE table_name = 'node_versions' "
+            "AND column_name IN ('type', 'status', 'file_path', 'tags', 'confidence') "
+            "ORDER BY column_name",
+        ).fetchall()
+        col_names = sorted(r[0] for r in row)
+        assert col_names == ["confidence", "file_path", "status", "tags", "type"]
+
+    def test_existing_rows_have_null_new_columns(self, db_conn) -> None:
+        """Pre-existing node_versions rows have NULL for new columns."""
+        row = db_conn.execute(
+            "SELECT type, status, file_path, confidence "
+            "FROM node_versions LIMIT 1",
+        ).fetchone()
+        # If there are rows, they should have NULLs (backfill not done)
+        if row is not None:
+            assert row[0] is None  # type
+            assert row[1] is None  # status
+            assert row[2] is None  # file_path
+            assert row[3] is None  # confidence
+
+    def test_migration_is_recorded(self, db_conn) -> None:
+        """010_node_versions_full_snapshot.sql is in migration history."""
+        assert _is_applied(db_conn, "010_node_versions_full_snapshot.sql")

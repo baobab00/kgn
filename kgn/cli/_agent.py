@@ -8,6 +8,7 @@ import typer
 from rich.table import Table
 
 from kgn.cli._app import _project_not_found, agent_app, console
+from kgn.errors import KgnError
 
 # ── agent list ────────────────────────────────────────────────────────
 
@@ -46,6 +47,9 @@ def agent_list(
                     str(ag.get("created_at", ""))[:19],
                 )
             console.print(table)
+    except KgnError as e:
+        console.print(f"[bold red][{e.code}] Error:[/bold red] {e}")
+        raise typer.Exit(code=1) from e
     except Exception as e:
         console.print(f"[bold red]Error:[/bold red] {e}")
         raise typer.Exit(code=1) from e
@@ -93,6 +97,9 @@ def agent_role_set(
             console.print(f"[green]✅ Agent '{agent}' role set to '{role}'[/green]")
     except typer.Exit:
         raise
+    except KgnError as e:
+        console.print(f"[bold red][{e.code}] Error:[/bold red] {e}")
+        raise typer.Exit(code=1) from e
     except Exception as e:
         console.print(f"[bold red]Error:[/bold red] {e}")
         raise typer.Exit(code=1) from e
@@ -150,6 +157,9 @@ def agent_stats(
             console.print(table)
     except typer.Exit:
         raise
+    except KgnError as e:
+        console.print(f"[bold red][{e.code}] Error:[/bold red] {e}")
+        raise typer.Exit(code=1) from e
     except Exception as e:
         console.print(f"[bold red]Error:[/bold red] {e}")
         raise typer.Exit(code=1) from e
@@ -214,6 +224,9 @@ def agent_timeline(
             console.print(table)
     except typer.Exit:
         raise
+    except KgnError as e:
+        console.print(f"[bold red][{e.code}] Error:[/bold red] {e}")
+        raise typer.Exit(code=1) from e
     except Exception as e:
         console.print(f"[bold red]Error:[/bold red] {e}")
         raise typer.Exit(code=1) from e

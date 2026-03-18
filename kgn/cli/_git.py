@@ -8,6 +8,7 @@ from typing import Annotated
 import typer
 
 from kgn.cli._app import branch_app, console, git_app, pr_app
+from kgn.errors import KgnError
 
 # ── git init ──────────────────────────────────────────────────────────
 
@@ -29,6 +30,9 @@ def git_init(
         if result.message:
             console.print(f"  {result.message}")
         console.print()
+    except KgnError as exc:
+        console.print(f"\n[bold red][{exc.code}] Error:[/bold red] {exc}\n")
+        raise typer.Exit(code=1) from exc
     except Exception as exc:
         console.print(f"\n[bold red]Error:[/bold red] {exc}\n")
         raise typer.Exit(code=1) from exc
@@ -70,6 +74,9 @@ def git_status(
                 console.print(f"  [dim]?[/dim]  {f}")
         console.print(f"\n  Total changes: {status.total_changes}\n")
 
+    except KgnError as exc:
+        console.print(f"\n[bold red][{exc.code}] Error:[/bold red] {exc}\n")
+        raise typer.Exit(code=1) from exc
     except Exception as exc:
         console.print(f"\n[bold red]Error:[/bold red] {exc}\n")
         raise typer.Exit(code=1) from exc
@@ -101,6 +108,9 @@ def git_diff(
         else:
             console.print(diff_output)
 
+    except KgnError as exc:
+        console.print(f"\n[bold red][{exc.code}] Error:[/bold red] {exc}\n")
+        raise typer.Exit(code=1) from exc
     except Exception as exc:
         console.print(f"\n[bold red]Error:[/bold red] {exc}\n")
         raise typer.Exit(code=1) from exc
@@ -140,6 +150,9 @@ def git_log(
             )
         console.print()
 
+    except KgnError as exc:
+        console.print(f"\n[bold red][{exc.code}] Error:[/bold red] {exc}\n")
+        raise typer.Exit(code=1) from exc
     except Exception as exc:
         console.print(f"\n[bold red]Error:[/bold red] {exc}\n")
         raise typer.Exit(code=1) from exc
@@ -171,6 +184,9 @@ def branch_list(
             console.print(f"  {marker}{b}[/green]" if b == current else f"    {b}")
         console.print()
 
+    except KgnError as exc:
+        console.print(f"\n[bold red][{exc.code}] Error:[/bold red] {exc}\n")
+        raise typer.Exit(code=1) from exc
     except Exception as exc:
         console.print(f"\n[bold red]Error:[/bold red] {exc}\n")
         raise typer.Exit(code=1) from exc
@@ -196,6 +212,9 @@ def branch_checkout(
         branch_svc = BranchService(git_svc)
         branch_svc.checkout(name)
         console.print(f"\n[green]Switched to branch '{name}'[/green]\n")
+    except KgnError as exc:
+        console.print(f"\n[bold red][{exc.code}] Error:[/bold red] {exc}\n")
+        raise typer.Exit(code=1) from exc
     except Exception as exc:
         console.print(f"\n[bold red]Error:[/bold red] {exc}\n")
         raise typer.Exit(code=1) from exc
@@ -228,6 +247,9 @@ def branch_cleanup(
                 console.print(f"  [dim]✗[/dim] {b}")
             console.print()
 
+    except KgnError as exc:
+        console.print(f"\n[bold red][{exc.code}] Error:[/bold red] {exc}\n")
+        raise typer.Exit(code=1) from exc
     except Exception as exc:
         console.print(f"\n[bold red]Error:[/bold red] {exc}\n")
         raise typer.Exit(code=1) from exc
@@ -271,6 +293,9 @@ def pr_create(
 
     except typer.Exit:
         raise
+    except KgnError as exc:
+        console.print(f"\n[bold red][{exc.code}] Error:[/bold red] {exc}\n")
+        raise typer.Exit(code=1) from exc
     except Exception as exc:
         console.print(f"\n[bold red]Error:[/bold red] {exc}\n")
         raise typer.Exit(code=1) from exc
@@ -307,6 +332,9 @@ def pr_list(
 
     except typer.Exit:
         raise
+    except KgnError as exc:
+        console.print(f"\n[bold red][{exc.code}] Error:[/bold red] {exc}\n")
+        raise typer.Exit(code=1) from exc
     except Exception as exc:
         console.print(f"\n[bold red]Error:[/bold red] {exc}\n")
         raise typer.Exit(code=1) from exc

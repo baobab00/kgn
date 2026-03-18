@@ -21,6 +21,7 @@ from kgn.mcp._helpers import (
     _subgraph_node_to_dict,
     safe_tool_call,
 )
+from kgn.mcp._state import get_state
 
 log = structlog.get_logger("kgn.mcp.read")
 
@@ -41,7 +42,8 @@ def register_read_tools(server: FastMCP) -> None:
         if nid is None:
             return _error_json(f"Invalid UUID: {node_id}", KgnErrorCode.INVALID_UUID)
 
-        with server._kgn_conn_factory() as c:  # type: ignore[attr-defined]
+        state = get_state(server)
+        with state.conn_factory() as c:
             repo = KgnRepository(c)
             node = repo.get_node_by_id(nid)
 
@@ -61,7 +63,8 @@ def register_read_tools(server: FastMCP) -> None:
         t0 = time.monotonic()
         log.info("tool_called", tool="query_nodes", project=project)
 
-        with server._kgn_conn_factory() as c:  # type: ignore[attr-defined]
+        state = get_state(server)
+        with state.conn_factory() as c:
             repo = KgnRepository(c)
             pid = repo.get_project_by_name(project)
             if pid is None:
@@ -105,7 +108,8 @@ def register_read_tools(server: FastMCP) -> None:
         if nid is None:
             return _error_json(f"Invalid UUID: {node_id}", KgnErrorCode.INVALID_UUID)
 
-        with server._kgn_conn_factory() as c:  # type: ignore[attr-defined]
+        state = get_state(server)
+        with state.conn_factory() as c:
             repo = KgnRepository(c)
             node = repo.get_node_by_id(nid)
             if node is None:
@@ -149,7 +153,8 @@ def register_read_tools(server: FastMCP) -> None:
         if nid is None:
             return _error_json(f"Invalid UUID: {node_id}", KgnErrorCode.INVALID_UUID)
 
-        with server._kgn_conn_factory() as c:  # type: ignore[attr-defined]
+        state = get_state(server)
+        with state.conn_factory() as c:
             repo = KgnRepository(c)
             node = repo.get_node_by_id(nid)
             if node is None:
