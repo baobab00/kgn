@@ -10,7 +10,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from kgn.embedding.client import MODEL_DIMENSIONS
+from kgn.embedding.client import _MAX_RETRIES, MODEL_DIMENSIONS
+from kgn.errors import KgnError, KgnErrorCode
 
 # ── Helpers ────────────────────────────────────────────────────────────
 
@@ -159,3 +160,134 @@ class TestOpenAIImportError:
                 sys.modules["openai"] = saved
             else:
                 sys.modules.pop("openai", None)
+
+
+# ══════════════════════════════════════════════════════════════════════
+#  Phase 12 / Step 4: Error handling & retry
+# ══════════════════════════════════════════════════════════════════════
+
+
+class TestEmbedErrorHandling:
+    """Test embed() resilience: retry, timeout, auth, empty input."""
+
+    def test_embed_empty_list_returns_empty(self) -> None:
+        """embed([]) returns [] without calling the API."""
+        openai_mod, openai_client = _make_openai_mock()
+
+        with patch.dict(sys.modules, {"openai": openai_mod}):
+            from kgn.embedding.client import OpenAIEmbeddingClient
+
+            client = OpenAIEmbeddingClient(api_key="sk-test")
+            result = client.embed([])
+
+        assert result == []
+        openai_client.embeddings.create.assert_not_called()
+
+    def test_embed_timeout_raises_timeout_code(self) -> None:
+        """Timeout errors raise KgnError with EMBEDDING_API_TIMEOUT."""
+        openai_mod, openai_client = _make_openai_mock()
+
+        # Simulate a timeout exception
+        class APITimeoutError(Exception):
+            pass
+
+        openai_client.embeddings.create.side_effect = APITimeoutError("request timed out")
+
+        with patch.dict(sys.modules, {"openai": openai_mod}):
+            from kgn.embedding.client import OpenAIEmbeddingClient
+
+            client = OpenAIEmbeddingClient(api_key="sk-test")
+            with (
+                patch("kgn.embedding.client.time.sleep"),
+                pytest.raises(KgnError) as exc_info,
+            ):
+                client.embed(["hello"])
+
+        assert exc_info.value.code == KgnErrorCode.EMBEDDING_API_TIMEOUT
+
+    def test_embed_auth_error_fails_fast(self) -> None:
+        """Auth errors raise KgnError immediately without retry."""
+        openai_mod, openai_client = _make_openai_mock()
+
+        class AuthenticationError(Exception):
+            pass
+
+        openai_client.embeddings.create.side_effect = AuthenticationError("invalid key")
+
+        with patch.dict(sys.modules, {"openai": openai_mod}):
+            from kgn.embedding.client import OpenAIEmbeddingClient
+
+            client = OpenAIEmbeddingClient(api_key="sk-bad")
+            with pytest.raises(KgnError) as exc_info:
+                client.embed(["hello"])
+
+        assert exc_info.value.code == KgnErrorCode.EMBEDDING_API_FAILED
+        # Auth errors should NOT retry — only 1 call
+        assert openai_client.embeddings.create.call_count == 1
+
+    def test_embed_rate_limit_retries_then_succeeds(self) -> None:
+        """Rate limit (429) retries and succeeds on later attempt."""
+        openai_mod, openai_client = _make_openai_mock()
+
+        class RateLimitError(Exception):
+            pass
+
+        item = MagicMock()
+        item.embedding = [0.5] * 1536
+        success_resp = MagicMock(data=[item])
+
+        # Fail twice, succeed on third attempt
+        openai_client.embeddings.create.side_effect = [
+            RateLimitError("rate limit exceeded"),
+            RateLimitError("rate limit exceeded"),
+            success_resp,
+        ]
+
+        with patch.dict(sys.modules, {"openai": openai_mod}):
+            from kgn.embedding.client import OpenAIEmbeddingClient
+
+            client = OpenAIEmbeddingClient(api_key="sk-test")
+            with patch("kgn.embedding.client.time.sleep"):
+                result = client.embed(["hello"])
+
+        assert len(result) == 1
+        assert result[0][0] == 0.5
+        assert openai_client.embeddings.create.call_count == 3
+
+    def test_embed_rate_limit_exhausts_retries(self) -> None:
+        """Rate limit errors exhaust retries and raise KgnError."""
+        openai_mod, openai_client = _make_openai_mock()
+
+        class RateLimitError(Exception):
+            pass
+
+        openai_client.embeddings.create.side_effect = RateLimitError("429 too many")
+
+        with patch.dict(sys.modules, {"openai": openai_mod}):
+            from kgn.embedding.client import OpenAIEmbeddingClient
+
+            client = OpenAIEmbeddingClient(api_key="sk-test")
+            with (
+                patch("kgn.embedding.client.time.sleep"),
+                pytest.raises(KgnError) as exc_info,
+            ):
+                client.embed(["hello"])
+
+        assert exc_info.value.code == KgnErrorCode.EMBEDDING_API_FAILED
+        assert openai_client.embeddings.create.call_count == _MAX_RETRIES
+
+    def test_embed_generic_error_fails_immediately(self) -> None:
+        """Non-retryable errors raise KgnError immediately."""
+        openai_mod, openai_client = _make_openai_mock()
+
+        openai_client.embeddings.create.side_effect = ValueError("bad input")
+
+        with patch.dict(sys.modules, {"openai": openai_mod}):
+            from kgn.embedding.client import OpenAIEmbeddingClient
+
+            client = OpenAIEmbeddingClient(api_key="sk-test")
+            with pytest.raises(KgnError) as exc_info:
+                client.embed(["hello"])
+
+        assert exc_info.value.code == KgnErrorCode.EMBEDDING_API_FAILED
+        assert openai_client.embeddings.create.call_count == 1

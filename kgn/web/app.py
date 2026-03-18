@@ -7,12 +7,13 @@ to the existing service layer (R3/R12).
 
 from __future__ import annotations
 
+import os
 import uuid
 from pathlib import Path
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -58,6 +59,22 @@ def create_app(project_name: str, project_id: uuid.UUID) -> FastAPI:
         allow_methods=["GET"],
         allow_headers=["*"],
     )
+
+    # Optional API key middleware (I-08 security hardening)
+    api_key = os.environ.get("KGN_API_KEY", "")
+    if api_key:
+
+        @app.middleware("http")
+        async def _api_key_guard(request: Request, call_next) -> Response:  # type: ignore[no-untyped-def]
+            path = request.url.path
+            if path.startswith("/api/v1/") and path != "/api/v1/health":
+                provided = request.headers.get("X-API-Key", "")
+                if provided != api_key:
+                    return JSONResponse(
+                        status_code=401,
+                        content={"detail": "Invalid or missing API key"},
+                    )
+            return await call_next(request)
 
     # API routes
     app.include_router(nodes_router, prefix="/api/v1")

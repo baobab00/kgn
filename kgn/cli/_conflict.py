@@ -9,6 +9,7 @@ import typer
 from rich.table import Table
 
 from kgn.cli._app import _project_not_found, conflict_app, console
+from kgn.errors import KgnError
 
 # ── conflict scan ──────────────────────────────────────────────────────
 
@@ -58,6 +59,9 @@ def conflict_scan(
 
     except typer.Exit:
         raise
+    except KgnError as e:
+        console.print(f"\n[bold red][{e.code}] Error:[/bold red] {e}\n")
+        raise typer.Exit(code=1) from e
     except Exception as e:
         console.print(f"\n[bold red]Error:[/bold red] {e}\n")
         raise typer.Exit(code=1) from e
@@ -104,6 +108,9 @@ def conflict_approve(
 
     except typer.Exit:
         raise
+    except KgnError as e:
+        console.print(f"\n[bold red][{e.code}] Error:[/bold red] {e}\n")
+        raise typer.Exit(code=1) from e
     except Exception as e:
         console.print(f"\n[bold red]Error:[/bold red] {e}\n")
         raise typer.Exit(code=1) from e
@@ -150,6 +157,9 @@ def conflict_dismiss(
 
     except typer.Exit:
         raise
+    except KgnError as e:
+        console.print(f"\n[bold red][{e.code}] Error:[/bold red] {e}\n")
+        raise typer.Exit(code=1) from e
     except Exception as e:
         console.print(f"\n[bold red]Error:[/bold red] {e}\n")
         raise typer.Exit(code=1) from e

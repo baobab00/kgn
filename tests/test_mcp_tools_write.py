@@ -371,3 +371,38 @@ class TestEnqueueTask:
         data = json.loads(result)
 
         assert "error" in data
+
+
+# ── Role Fallback ──────────────────────────────────────────────────────
+
+
+class TestRoleFallbackToIndexer:
+    """Unrecognized role should fall back to INDEXER, not ADMIN (Phase 12 / Step 5)."""
+
+    def test_unknown_role_denied_node_create(self, db_conn, repo, monkeypatch) -> None:
+        """An agent with an unrecognized role should be denied SPEC node creation."""
+        from kgn.db.repository import KgnRepository
+
+        project_name = f"mcp-role-{uuid.uuid4().hex[:8]}"
+        repo.get_or_create_project(project_name)
+        server = create_server(project_name, conn=db_conn)
+
+        # Monkeypatch get_agent_role to return a value not in AgentRole enum
+        _original = KgnRepository.get_agent_role
+        monkeypatch.setattr(
+            KgnRepository,
+            "get_agent_role",
+            lambda self, aid: "future_role_xyz",
+        )
+
+        # Try to ingest a SPEC node — unknown role falls back to INDEXER,
+        # which cannot create SPEC nodes → expect KGN-550
+        content = _make_kgn_content(
+            node_type="SPEC",
+            project_id=project_name,
+        )
+        result = _call_tool(server, "ingest_node", kgn_content=content)
+        data = json.loads(result)
+
+        assert "error" in data
+        assert data.get("code") == "KGN-550"

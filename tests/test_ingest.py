@@ -230,6 +230,23 @@ class TestIngestLog:
         for row in failed_logs:
             assert row[0] is not None  # error_detail should be present
 
+    def test_success_log_has_content_hash(
+        self,
+        svc: IngestService,
+        db_conn: Connection,
+        project_id: uuid.UUID,
+    ) -> None:
+        """SUCCESS entries for .kgn files should record actual content_hash (Phase 12 / Step 9)."""
+        svc.ingest_path(INGEST_DIR)
+        rows = db_conn.execute(
+            "SELECT content_hash FROM kgn_ingest_log "
+            "WHERE project_id = %s AND status = 'SUCCESS' AND file_path LIKE '%%.kgn'",
+            (project_id,),
+        ).fetchall()
+        assert len(rows) > 0
+        for row in rows:
+            assert row[0] != "", "content_hash should not be empty on .kgn success"
+
 
 # ── Edge cases ────────────────────────────────────────────────────────
 

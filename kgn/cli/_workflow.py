@@ -9,6 +9,7 @@ import typer
 from rich.table import Table
 
 from kgn.cli._app import _project_not_found, console, workflow_app
+from kgn.errors import KgnError
 
 # ── workflow list ─────────────────────────────────────────────────────
 
@@ -115,6 +116,9 @@ def workflow_run(
             )
     except typer.Exit:
         raise
+    except KgnError as e:
+        console.print(f"[bold red][{e.code}] Error:[/bold red] {e}")
+        raise typer.Exit(code=1) from e
     except Exception as e:
         console.print(f"[bold red]Error:[/bold red] {e}")
         raise typer.Exit(code=1) from e

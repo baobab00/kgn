@@ -74,13 +74,10 @@ async def list_tasks(
         repo = KgnRepository(conn)
         tasks = repo.list_tasks(project_id, state=filter_state)
 
-        # Resolve task node titles for display
+        # Resolve task node titles for display (batch)
         node_ids = {t.task_node_id for t in tasks}
-        titles: dict[uuid.UUID, str] = {}
-        for nid in node_ids:
-            node = repo.get_node_by_id(nid)
-            if node is not None:
-                titles[nid] = node.title
+        node_map = repo.get_nodes_by_ids(node_ids)
+        titles: dict[uuid.UUID, str] = {nid: n.title for nid, n in node_map.items()}
 
         # Resolve agent info for leased tasks
         agent_ids = {t.leased_by for t in tasks if t.leased_by}

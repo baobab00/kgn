@@ -63,7 +63,20 @@ _pool: ConnectionPool | None = None
 
 
 def get_pool() -> ConnectionPool:
-    """Get or create the global connection pool."""
+    """Get or create the global connection pool.
+
+    Commit policy:
+        ``pool.connection()`` wraps each checkout in a transaction.
+        On normal exit the connection is **auto-committed**; on exception
+        it is **rolled back**.  Therefore MCP tools that obtain a
+        connection via ``get_connection()`` do **not** need to call
+        ``conn.commit()`` — the pool context manager handles it.
+
+        CLI commands that use the same ``get_connection()`` helper call
+        ``conn.commit()`` explicitly for clarity, which is harmless
+        (double-commit on an already-committed transaction is a no-op
+        in psycopg 3's default transaction mode).
+    """
     global _pool  # noqa: PLW0603
     if _pool is None:
         _load_env()
@@ -94,7 +107,11 @@ def close_pool() -> None:
 
 @contextmanager
 def get_connection() -> Generator[Connection, None, None]:
-    """Get a connection from the pool as a context manager."""
+    """Get a connection from the pool as a context manager.
+
+    The returned connection is wrapped by ``pool.connection()`` which
+    auto-commits on successful exit and rolls back on exception.
+    """
     pool = get_pool()
     with pool.connection() as conn:
         yield conn

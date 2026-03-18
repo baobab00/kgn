@@ -13,7 +13,7 @@ import uuid
 from datetime import UTC, datetime
 
 from kgn.db.repository import KgnRepository
-from kgn.graph.subgraph import SubgraphService
+from kgn.graph.subgraph import MAX_SUBGRAPH_DEPTH, SubgraphService
 from kgn.models.enums import EdgeType, NodeStatus, NodeType
 from kgn.models.node import NodeRecord
 
@@ -363,3 +363,19 @@ class TestSubgraphService:
         assert "Root Goal" in md
         assert "## Depth 0" in md
         assert "## Edges" in md
+
+    def test_depth_clamped_to_max(
+        self,
+        repo: KgnRepository,
+        project_id: uuid.UUID,
+        agent_id: uuid.UUID,
+    ) -> None:
+        """depth > MAX_SUBGRAPH_DEPTH should be clamped (Phase 12 / Step 5)."""
+        root_id, child_id, gc_id = self._setup_graph(repo, project_id, agent_id)
+        svc = SubgraphService(repo)
+        result = svc.extract(root_id, project_id, depth=100)
+        # Result depth is clamped
+        assert result.depth <= MAX_SUBGRAPH_DEPTH
+        # Still finds nodes within actual graph
+        ids = {n.id for n in result.nodes}
+        assert root_id in ids

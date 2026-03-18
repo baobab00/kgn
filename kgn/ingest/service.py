@@ -19,6 +19,7 @@ from kgn.models.edge import EdgeRecord
 from kgn.models.node import NodeRecord
 from kgn.parser.kge_parser import KgeParseError, parse_kge, parse_kge_text
 from kgn.parser.kgn_parser import KgnParseError, parse_kgn, parse_kgn_text
+from kgn.parser.models import ParsedNode
 from kgn.parser.validator import validate_kgn
 
 log = structlog.get_logger()
@@ -34,6 +35,7 @@ class IngestFileResult:
     status: str  # "SUCCESS" | "SKIPPED" | "FAILED"
     node_id: uuid.UUID | None = None
     error: str | None = None
+    content_hash: str = ""
 
 
 @dataclass
@@ -196,36 +198,48 @@ class IngestService:
         """Parse → validate → resolve new: → upsert a single .kgn file."""
         file_str = str(path)
 
-        # 1. Parse
         try:
             parsed = parse_kgn(path)
         except KgnParseError as exc:
             return IngestFileResult(file_path=file_str, status="FAILED", error=str(exc))
 
-        # 2. Validate (V1-V6, V9, V10)
+        return self._upsert_from_parsed(parsed, file_str, enforce_project=False)
+
+    def _upsert_from_parsed(
+        self,
+        parsed: ParsedNode,
+        file_path: str,
+        *,
+        enforce_project: bool,
+    ) -> IngestFileResult:
+        """Shared pipeline: validate → resolve ID → upsert → conflict check."""
+        # 1. Validate (V1-V6, V9, V10)
         vr = validate_kgn(parsed)
         if not vr.is_valid:
             return IngestFileResult(
-                file_path=file_str,
+                file_path=file_path,
                 status="FAILED",
                 error="; ".join(vr.errors),
             )
 
-        # 3. Resolve node ID (new: → UUID)
+        # 2. Resolve node ID (new: → UUID)
         fm = parsed.front_matter
         try:
-            node_id = self._resolve_node_id(fm.id, file_str)
+            node_id = self._resolve_node_id(fm.id, file_path)
         except _SlugCollisionError as exc:
-            return IngestFileResult(file_path=file_str, status="FAILED", error=str(exc))
+            return IngestFileResult(file_path=file_path, status="FAILED", error=str(exc))
 
-        # 4. Resolve project / agent
-        project_uuid = self._repo.get_or_create_project(fm.project_id)
+        # 3. Resolve project / agent
+        if enforce_project and self._enforce_project:
+            project_uuid = self._project_id
+        else:
+            project_uuid = self._repo.get_or_create_project(fm.project_id)
         agent_uuid = self._repo.get_or_create_agent(
             project_id=project_uuid,
             agent_key=fm.agent_id,
         )
 
-        # 5. Build NodeRecord
+        # 4. Build NodeRecord
         node = NodeRecord(
             id=node_id,
             project_id=project_uuid,
@@ -233,7 +247,7 @@ class IngestService:
             status=fm.status,
             title=fm.title,
             body_md=parsed.body,
-            file_path=file_str,
+            file_path=file_path,
             content_hash=parsed.content_hash,
             tags=fm.tags,
             confidence=fm.confidence,
@@ -241,10 +255,10 @@ class IngestService:
             created_at=fm.created_at,
         )
 
-        # 6. Upsert
+        # 5. Upsert
         upsert = self._repo.upsert_node(node)
 
-        # 7. Conflict detection on UPDATE
+        # 6. Conflict detection on UPDATE
         if upsert.status == "UPDATED":
             self._check_conflict_on_update(
                 node_id=upsert.node_id,
@@ -252,14 +266,13 @@ class IngestService:
                 agent_id=agent_uuid,
             )
 
-        status = "SUCCESS" if upsert.status == "CREATED" else upsert.status
-        if upsert.status == "UPDATED":
-            status = "SUCCESS"
+        status = "SUCCESS" if upsert.status in ("CREATED", "UPDATED") else upsert.status
 
         return IngestFileResult(
-            file_path=file_str,
+            file_path=file_path,
             status=status,
             node_id=upsert.node_id,
+            content_hash=parsed.content_hash or "",
         )
 
     # ── .kge processing ───────────────────────────────────────────
@@ -320,74 +333,12 @@ class IngestService:
         """Parse → validate → resolve new: → upsert from raw .kgn text."""
         source = "<text>"
 
-        # 1. Parse
         try:
             parsed = parse_kgn_text(content, source_path=source)
         except KgnParseError as exc:
             return IngestFileResult(file_path=source, status="FAILED", error=str(exc))
 
-        # 2. Validate
-        vr = validate_kgn(parsed)
-        if not vr.is_valid:
-            return IngestFileResult(
-                file_path=source,
-                status="FAILED",
-                error="; ".join(vr.errors),
-            )
-
-        # 3. Resolve node ID
-        fm = parsed.front_matter
-        try:
-            node_id = self._resolve_node_id(fm.id, source)
-        except _SlugCollisionError as exc:
-            return IngestFileResult(file_path=source, status="FAILED", error=str(exc))
-
-        # 4. Resolve project / agent
-        if self._enforce_project:
-            project_uuid = self._project_id
-        else:
-            project_uuid = self._repo.get_or_create_project(fm.project_id)
-        agent_uuid = self._repo.get_or_create_agent(
-            project_id=project_uuid,
-            agent_key=fm.agent_id,
-        )
-
-        # 5. Build NodeRecord
-        node = NodeRecord(
-            id=node_id,
-            project_id=project_uuid,
-            type=fm.type,
-            status=fm.status,
-            title=fm.title,
-            body_md=parsed.body,
-            file_path=source,
-            content_hash=parsed.content_hash,
-            tags=fm.tags,
-            confidence=fm.confidence,
-            created_by=agent_uuid,
-            created_at=fm.created_at,
-        )
-
-        # 6. Upsert
-        upsert = self._repo.upsert_node(node)
-
-        # 7. Conflict detection on UPDATE
-        if upsert.status == "UPDATED":
-            self._check_conflict_on_update(
-                node_id=upsert.node_id,
-                project_id=project_uuid,
-                agent_id=agent_uuid,
-            )
-
-        status = "SUCCESS" if upsert.status == "CREATED" else upsert.status
-        if upsert.status == "UPDATED":
-            status = "SUCCESS"
-
-        return IngestFileResult(
-            file_path=source,
-            status=status,
-            node_id=upsert.node_id,
-        )
+        return self._upsert_from_parsed(parsed, source, enforce_project=True)
 
     def _ingest_kge_text(self, content: str) -> IngestFileResult:
         """Parse → resolve IDs → insert edges from raw .kge text."""
@@ -487,7 +438,7 @@ class IngestService:
         self._repo.log_ingest(
             project_id=self._project_id,
             file_path=result.file_path,
-            content_hash="",  # hash may not be available on failure
+            content_hash=result.content_hash,
             status=result.status,
             error_detail=error_detail,
             ingested_by=self._agent_id,

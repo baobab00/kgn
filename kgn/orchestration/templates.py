@@ -131,6 +131,8 @@ def register_builtins(engine: WorkflowEngine) -> None:  # noqa: F821
     """Register all built-in templates into a WorkflowEngine instance."""
     from kgn.orchestration.workflow import WorkflowEngine  # avoid circular
 
-    assert isinstance(engine, WorkflowEngine)
+    if not isinstance(engine, WorkflowEngine):
+        msg = f"Expected WorkflowEngine, got {type(engine).__name__}"
+        raise TypeError(msg)
     for tmpl in BUILTIN_TEMPLATES:
         engine.register(tmpl)

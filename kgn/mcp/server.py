@@ -14,6 +14,7 @@ from mcp.server.fastmcp import FastMCP
 from kgn.db.connection import get_connection
 from kgn.db.repository import KgnRepository
 from kgn.embedding.factory import create_embedding_client
+from kgn.mcp._state import KgnServerState
 from kgn.mcp.tools.read import register_read_tools
 from kgn.mcp.tools.task import register_task_tools
 from kgn.mcp.tools.workflow import register_workflow_tools
@@ -35,7 +36,13 @@ _SENTINEL = object()
 
 @contextmanager
 def _default_connection() -> Generator[Connection, None, None]:
-    """Default connection provider using the global pool."""
+    """Default connection provider using the global pool.
+
+    Commit policy: ``get_connection()`` → ``pool.connection()`` context
+    manager auto-commits on success and rolls back on exception.
+    Individual ``conn.commit()`` calls are intentionally omitted in
+    MCP tool handlers.
+    """
     with get_connection() as conn:
         yield conn
 
@@ -89,22 +96,18 @@ def create_server(
         name=f"kgn-{project_name}",
     )
 
-    # Store project info on server instance for tool handler access
-    server._kgn_project_id = project_id  # type: ignore[attr-defined]
-    server._kgn_project_name = project_name  # type: ignore[attr-defined]
-    server._kgn_agent_role = role  # type: ignore[attr-defined]
+    # Build typed state
+    conn_factory = (lambda: _fixed_connection(conn)) if conn is not None else _default_connection  # noqa: E731
+    embed_client = create_embedding_client() if embedding_client is _SENTINEL else embedding_client
 
-    # Connection factory: fixed connection for tests, pool for production
-    if conn is not None:
-        server._kgn_conn_factory = lambda: _fixed_connection(conn)  # type: ignore[attr-defined]
-    else:
-        server._kgn_conn_factory = _default_connection  # type: ignore[attr-defined]
-
-    # Embedding client: if sentinel, auto-create from factory
-    if embedding_client is _SENTINEL:
-        server._kgn_embed_client = create_embedding_client()  # type: ignore[attr-defined]
-    else:
-        server._kgn_embed_client = embedding_client  # type: ignore[attr-defined]
+    state = KgnServerState(
+        project_id=project_id,
+        project_name=project_name,
+        agent_role=role,
+        conn_factory=conn_factory,
+        embed_client=embed_client,
+    )
+    server._kgn_state = state  # type: ignore[attr-defined]
 
     # ── Register tools ────────────────────────────────────────────
     register_read_tools(server)

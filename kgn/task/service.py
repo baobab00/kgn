@@ -17,6 +17,7 @@ from dataclasses import dataclass
 
 from kgn.db.repository import KgnRepository, SimilarNode, TaskQueueItem
 from kgn.embedding.client import EmbeddingClient
+from kgn.errors import KgnError, KgnErrorCode
 from kgn.graph.subgraph import SubgraphResult, SubgraphService
 from kgn.models.enums import ActivityType
 from kgn.models.node import NodeRecord
@@ -164,7 +165,11 @@ class TaskService:
 
         # 2. Full TASK node record
         node = self._repo.get_node_by_id(task.task_node_id)
-        assert node is not None, f"TASK node {task.task_node_id} disappeared"
+        if node is None:
+            raise KgnError(
+                code=KgnErrorCode.TASK_NODE_INVALID,
+                message=f"TASK node {task.task_node_id} disappeared",
+            )
 
         # 3. Subgraph (depth=2)
         subgraph = self._subgraph.extract(

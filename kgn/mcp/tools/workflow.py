@@ -12,6 +12,7 @@ from kgn.db.repository import KgnRepository
 from kgn.errors import KgnErrorCode
 from kgn.graph.subgraph import SubgraphService
 from kgn.mcp._helpers import _error_json, _parse_uuid, safe_tool_call
+from kgn.mcp._state import get_state
 from kgn.orchestration.templates import BUILTIN_TEMPLATES, register_builtins
 from kgn.orchestration.workflow import WorkflowEngine
 from kgn.task.service import TaskService
@@ -78,7 +79,8 @@ def register_workflow_tools(server: FastMCP) -> None:
                 KgnErrorCode.VALIDATION_ERROR,
             )
 
-        with server._kgn_conn_factory() as c:  # type: ignore[attr-defined]
+        state = get_state(server)
+        with state.conn_factory() as c:
             repo = KgnRepository(c)
             pid = repo.get_project_by_name(project)
             if pid is None:
@@ -87,12 +89,10 @@ def register_workflow_tools(server: FastMCP) -> None:
                     KgnErrorCode.PROJECT_NOT_FOUND,
                 )
 
-            agent_role_default = getattr(server, "_kgn_agent_role", "admin")
-            agent_id = repo.get_or_create_agent(pid, agent, role=agent_role_default)
+            agent_id = repo.get_or_create_agent(pid, agent, role=state.agent_role)
 
             subgraph_svc = SubgraphService(repo)
-            embed_client = server._kgn_embed_client  # type: ignore[attr-defined]
-            task_svc = TaskService(repo, subgraph_svc, embed_client)
+            task_svc = TaskService(repo, subgraph_svc, state.embed_client)
 
             engine = WorkflowEngine(repo, task_svc)
             register_builtins(engine)

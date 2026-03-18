@@ -12,6 +12,7 @@ from rich.panel import Panel
 from rich.text import Text
 
 from kgn.cli._app import _project_not_found, app, console
+from kgn.errors import KgnError
 
 # ── .env template ──────────────────────────────────────────────────────
 
@@ -108,6 +109,9 @@ def init(
 
         console.print("\n[bold green]Init complete.[/bold green]\n")
 
+    except KgnError as e:
+        console.print(f"\n[bold red][{e.code}] Error:[/bold red] {e}\n")
+        raise typer.Exit(code=1) from e
     except Exception as e:
         console.print(f"\n[bold red]Error:[/bold red] {e}\n")
         raise typer.Exit(code=1) from e
@@ -197,6 +201,9 @@ def ingest(
 
     except typer.Exit:
         raise
+    except KgnError as e:
+        console.print(f"\n[bold red][{e.code}] Error:[/bold red] {e}\n")
+        raise typer.Exit(code=1) from e
     except Exception as e:
         console.print(f"\n[bold red]Error:[/bold red] {e}\n")
         raise typer.Exit(code=1) from e
@@ -226,6 +233,9 @@ def _run_embed_after_ingest(
     try:
         svc = EmbeddingService(repo=repo, client=client)
         return svc.embed_nodes(node_ids, project_id)
+    except KgnError as exc:
+        console.print(f"[bold red][{exc.code}] Error:[/bold red] {exc}")
+        raise typer.Exit(code=1) from exc
     except Exception as exc:
         console.print(
             f"\n[bold yellow]Warning:[/bold yellow] "
@@ -310,6 +320,9 @@ def status(
 
     except typer.Exit:
         raise
+    except KgnError as e:
+        console.print(f"\n[bold red][{e.code}] Error:[/bold red] {e}\n")
+        raise typer.Exit(code=1) from e
     except Exception as e:
         console.print(f"\n[bold red]Error:[/bold red] {e}\n")
         raise typer.Exit(code=1) from e
@@ -344,6 +357,9 @@ def health(
 
     except typer.Exit:
         raise
+    except KgnError as e:
+        console.print(f"\n[bold red][{e.code}] Error:[/bold red] {e}\n")
+        raise typer.Exit(code=1) from e
     except Exception as e:
         console.print(f"\n[bold red]Error:[/bold red] {e}\n")
         raise typer.Exit(code=1) from e

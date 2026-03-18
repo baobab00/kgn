@@ -1,355 +1,513 @@
 # KGN — Getting Started Guide
 
-A step-by-step guide anyone can follow, even with no prior experience.
+> Give your AI agents long-term memory with a shared knowledge graph.  
+> This guide walks you through installing KGN, adding your first knowledge, and connecting to Claude — in under 10 minutes.
+
+---
+
+## Table of Contents
+
+- [What is KGN?](#what-is-kgn)
+- [Prerequisites](#prerequisites)
+- [Step 1: Install KGN](#step-1-install-kgn)
+- [Step 2: Start the Database](#step-2-start-the-database)
+- [Step 3: Create a Project](#step-3-create-a-project)
+- [Step 4: Write Your First .kgn File](#step-4-write-your-first-kgn-file)
+- [Step 5: Ingest and Query](#step-5-ingest-and-query)
+- [Step 6: Connect Claude](#step-6-connect-claude)
+- [Going Further](#going-further)
+  - [Relationships (.kge Files)](#relationships-kge-files)
+  - [Semantic Search (Embeddings)](#semantic-search-embeddings)
+  - [Web Dashboard](#web-dashboard)
+  - [Task Queue & Multi-Agent](#task-queue--multi-agent)
+  - [Git/GitHub Sync](#gitgithub-sync)
+  - [VS Code Extension](#vs-code-extension)
+- [CLI Quick Reference](#cli-quick-reference)
+- [Node Types & Statuses](#node-types--statuses)
+- [Troubleshooting](#troubleshooting)
 
 ---
 
 ## What is KGN?
 
-KGN is a tool that gives AI agents (like Claude) **long-term memory**.
+AI agents forget everything between sessions. KGN fixes that.
 
-Normally, AI forgets everything once a conversation ends. KGN solves this by saving knowledge into a database so AI can remember and build on past work.
+KGN stores knowledge as **nodes** (ideas, specs, decisions, tasks) and **edges** (relationships between them) in a PostgreSQL database. AI agents can read, write, and search this knowledge through an MCP server, CLI, Web dashboard, or LSP-enabled editor.
 
-**In short:** You write notes → KGN stores them → AI can read and search them anytime.
+**How it works:**
+
+```
+You write .kgn files  →  KGN stores them in PostgreSQL  →  AI agents can query anytime
+```
 
 ---
 
-## Before You Begin
+## Prerequisites
 
-You'll need to install three things. Don't worry — we'll walk through each one.
-
-| What | Why | Time |
+| Required | Why | Install |
 |---|---|---|
-| Python 3.12+ | KGN is written in Python | ~5 min |
-| Docker Desktop | Runs the database automatically | ~10 min |
-| KGN itself | The tool you'll be using | ~2 min |
+| **Python 3.12+** | KGN is a Python package | [python.org/downloads](https://www.python.org/downloads/) |
+| **Docker Desktop** | Runs PostgreSQL for you | [docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop/) |
+| **Git** | Needed to clone the Docker setup | Typically pre-installed |
+
+> **Windows users:** When installing Python, check **"Add python.exe to PATH"** at the bottom of the installer.
 
 ---
 
-## Step 1: Install Python
-
-### Windows
-
-1. Go to [python.org/downloads](https://www.python.org/downloads/)
-2. Click the big yellow **"Download Python 3.12.x"** button
-3. Run the installer
-4. **⚠️ IMPORTANT:** Check the box that says **"Add python.exe to PATH"** at the bottom
-5. Click **"Install Now"**
-
-### Mac
-
-```bash
-# If you have Homebrew:
-brew install python@3.12
-
-# If not, download from python.org/downloads
-```
-
-### Verify it worked
-
-Open a terminal (Command Prompt on Windows, Terminal on Mac) and type:
-
-```bash
-python --version
-```
-
-You should see something like `Python 3.12.x`. If you see an error, restart your computer and try again.
-
----
-
-## Step 2: Install Docker Desktop
-
-Docker runs the database (PostgreSQL) for you. You don't need to know anything about databases.
-
-1. Go to [docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop/)
-2. Download for your OS (Windows / Mac / Linux)
-3. Install and open Docker Desktop
-4. Wait until the whale icon in your taskbar shows **"Docker Desktop is running"**
-
-> **💡 Tip:** Docker Desktop needs to be running whenever you use KGN. You can set it to start automatically on login.
-
----
-
-## Step 3: Install KGN
-
-Open your terminal and run:
+## Step 1: Install KGN
 
 ```bash
 pip install kgn-mcp
 ```
 
-That's it! Verify the installation:
+Verify it works:
 
 ```bash
-kgn --help
+kgn --version
+# kgn version 0.12.0
 ```
 
-You should see a list of available commands.
+> **Tip:** If `kgn` is not recognized, see [Troubleshooting](#kgn-command-not-found).
 
 ---
 
-## Step 4: Start the Database
+## Step 2: Start the Database
 
-KGN comes with a ready-to-use database setup. You just need to start it:
+KGN needs PostgreSQL. The easiest way is Docker:
 
 ```bash
-# First, get the KGN source code (for the Docker config)
 git clone https://github.com/baobab00/kgn.git
 cd kgn
-
-# Start the database
 docker compose -f docker/docker-compose.yml up -d postgres
 ```
 
-> **What just happened?** Docker downloaded and started a PostgreSQL database in the background. It runs quietly — you won't see a window for it.
-
-### Verify the database is running
+Verify it's running:
 
 ```bash
-docker ps
+docker ps --format "table {{.Names}}\t{{.Status}}"
+# kgn-postgres   Up ...
 ```
 
-You should see a container with "postgres" in its name showing status "Up".
+> **What happened?** Docker downloaded PostgreSQL with the pgvector extension and started it on port 5433. It runs in the background — no window will appear.
 
 ---
 
-## Step 5: Create Your First Project
+## Step 3: Create a Project
 
 ```bash
-kgn init --project my-first-project
+kgn init --project my-project
 ```
 
-You should see a success message. Your project is ready!
+This creates the database tables (if first run) and registers your project. You'll see a success message.
+
+> **Tip:** `kgn init` also auto-generates a `.env` file with database connection settings if one doesn't exist.
 
 ---
 
-## Step 6: Add Your First Knowledge Node
+## Step 4: Write Your First .kgn File
 
-KGN uses simple text files with a `.kgn` extension. Let's create one:
-
-### Create a file called `my-note.kgn`
-
-Open any text editor (Notepad, VS Code, etc.) and paste this:
+Create a file named `hello.kgn` with any text editor:
 
 ```yaml
 ---
 kgn_version: "0.1"
-id: "new:my-first-note"
+id: "new:hello-world"
 type: SPEC
-title: "My First Knowledge Node"
 status: ACTIVE
-project_id: "my-first-project"
+title: "Hello World"
+project_id: "my-project"
 agent_id: "human"
-tags: ["getting-started", "hello"]
+tags: ["getting-started"]
 confidence: 0.9
 ---
 
 ## Context
 
-This is my first time using KGN. I'm learning how knowledge nodes work.
+This is my first knowledge node. KGN stores this in PostgreSQL
+so any AI agent can find and reference it later.
 
 ## Content
 
-Knowledge nodes are like smart notes that AI can understand and search through.
-Each node has:
-- A **type** (GOAL, SPEC, TASK, etc.)
-- A **status** (ACTIVE, DEPRECATED, etc.)
-- **Tags** for easy searching
-- A **body** with your actual content
+Knowledge nodes use YAML front matter for metadata and Markdown for content.
+Think of them as smart memos that AI can understand, search, and build upon.
 ```
 
-### Save the file, then ingest it
+**What each field means:**
 
-```bash
-kgn ingest my-note.kgn --project my-first-project
-```
-
-🎉 **Congratulations!** You just added your first piece of knowledge that AI can access.
+| Field | Required | Meaning |
+|---|---|---|
+| `kgn_version` | Yes | Always `"0.1"` |
+| `id` | Yes | `"new:slug"` for new nodes (auto-generates UUID), or an existing UUID |
+| `type` | Yes | What kind of knowledge: GOAL, SPEC, TASK, DECISION, etc. |
+| `status` | Yes | Lifecycle state: ACTIVE, DEPRECATED, SUPERSEDED, ARCHIVED |
+| `title` | Yes | Human-readable title |
+| `project_id` | Yes | Project this node belongs to |
+| `agent_id` | Yes | Who created it (you, or an AI agent name) |
+| `tags` | No | Labels for filtering and search |
+| `confidence` | No | Certainty score (0.0–1.0) |
 
 ---
 
-## Step 7: Check Your Project
+## Step 5: Ingest and Query
+
+**Ingest** (store the node in the database):
 
 ```bash
-# See project overview
-kgn status --project my-first-project
+kgn ingest hello.kgn --project my-project
+```
 
-# Check graph health
-kgn health --project my-first-project
+**Check your project:**
 
-# Search for your node
-kgn query nodes --project my-first-project --type SPEC
+```bash
+kgn status --project my-project
+```
+
+**Search for nodes:**
+
+```bash
+kgn query nodes --project my-project --type SPEC
+```
+
+**See detailed health metrics:**
+
+```bash
+kgn health --project my-project
+```
+
+**Ingest the bundled examples:**
+
+```bash
+kgn ingest examples/ --project my-project --recursive
 ```
 
 ---
 
-## Step 8: Connect to Claude (Optional)
+## Step 6: Connect Claude
 
-This is where KGN really shines — letting Claude access your knowledge graph.
+This is where KGN becomes powerful — Claude can directly read, write, and manage tasks in your knowledge graph.
 
-### For Claude Desktop
-
-1. Find your Claude Desktop config file:
-   - **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
-   - **Mac:** `~/Library/Application Support/Claude/claude_desktop_config.json`
-
-2. Run the auto-config command:
+### Claude Code (recommended)
 
 ```bash
-kgn mcp init --project my-first-project --target claude-desktop
+# Auto-generate .mcp.json in your project directory:
+kgn mcp init --project my-project
+
+# Or use Claude's CLI directly:
+claude mcp add kgn -- kgn mcp serve --project my-project
 ```
 
-Or manually add to the file:
+### Claude Desktop
+
+```bash
+kgn mcp init --project my-project --target claude-desktop
+```
+
+Or manually add to your `claude_desktop_config.json`:
+
+- **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+- **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
 
 ```json
 {
   "mcpServers": {
     "kgn": {
       "command": "kgn",
-      "args": ["mcp", "serve", "--project", "my-first-project", "--role", "admin"]
+      "args": ["mcp", "serve", "--project", "my-project"]
     }
   }
 }
 ```
 
-> **💡 Available roles:** `admin` (full access), `genesis` (GOAL/SPEC/ARCH/CONSTRAINT), `worker` (LOGIC/DECISION), `reviewer` (ISSUE/SUMMARY), `indexer` (SUMMARY only). When omitted, defaults to `admin`.
+Restart Claude. When you see the 🔨 icon, KGN tools are loaded.
 
-3. Restart Claude Desktop
+Claude now has access to **12 MCP tools**:
 
-4. Look for the 🔨 (hammer) icon — it means KGN tools are available!
+| Tool | What it does |
+|---|---|
+| `get_node` | Read a node by ID |
+| `query_nodes` | Search nodes (filter by type, status) |
+| `get_subgraph` | Extract related nodes (BFS traversal) |
+| `query_similar` | Find semantically similar nodes (vector search) |
+| `ingest_node` | Create/update a node from .kgn text |
+| `ingest_edge` | Create relationships from .kge text |
+| `enqueue_task` | Add a task to the queue |
+| `task_checkout` | Pick up the next task to work on |
+| `task_complete` | Mark a task as done |
+| `task_fail` | Mark a task as failed |
+| `workflow_list` | List workflow templates |
+| `workflow_run` | Execute a workflow (creates a task chain) |
 
-Now Claude can read, search, and write to your knowledge graph.
+---
 
-### For Claude Code (Terminal)
+## Going Further
+
+### Relationships (.kge Files)
+
+Nodes can be connected with typed edges. Create `edges.kge`:
+
+```yaml
+---
+kgn_version: "0.1"
+project_id: "my-project"
+agent_id: "human"
+edges:
+  - from: "new:hello-world"
+    to: "new:another-node"
+    type: DEPENDS_ON
+---
+```
+
+**Edge types:** `DEPENDS_ON`, `IMPLEMENTS`, `RESOLVES`, `SUPERSEDES`, `DERIVED_FROM`, `CONTRADICTS`, `CONSTRAINED_BY`
 
 ```bash
-# Auto-generate .mcp.json in your project directory:
-kgn mcp init --project my-first-project
-
-# Or manually:
-claude mcp add kgn -- kgn mcp serve --project my-first-project --role admin
+kgn ingest edges.kge --project my-project
 ```
 
 ---
 
-## What's Next?
+### Semantic Search (Embeddings)
 
-Now that you have KGN running, here are some things to try:
-
-### 📁 Ingest example files
-
-KGN comes with example files you can try:
+Enable AI-powered similarity search with OpenAI embeddings:
 
 ```bash
-kgn ingest examples/ --project my-first-project --recursive
-```
+# Add your API key to .env
+echo "KGN_OPENAI_API_KEY=sk-your-key-here" >> .env
 
-### 🔍 Search with AI similarity
+# Test the connection
+kgn embed provider test
 
-If you have an OpenAI API key, you can enable semantic search:
-
-```bash
-# Set your API key (create a .env file)
-echo "KGN_OPENAI_API_KEY=sk-your-key-here" > .env
-
-# Re-ingest with embeddings
-kgn ingest examples/ --project my-first-project --recursive --embed
+# Ingest with embeddings
+kgn ingest hello.kgn --project my-project --embed
 
 # Find similar nodes
-kgn query similar <node-id> --project my-first-project --top 5
+kgn query similar <node-uuid> --project my-project --top 5
 ```
 
-### 🌐 Web Dashboard
+> If no API key is set, KGN works normally — embeddings are silently skipped.
 
-See your knowledge graph visually:
+---
+
+### Web Dashboard
+
+Visualize your knowledge graph in a browser:
 
 ```bash
 pip install kgn-mcp[web]
-kgn web serve --project my-first-project --port 8080
+kgn web serve --project my-project --port 8080
 ```
 
-Open http://localhost:8080 in your browser.
+Open http://localhost:8080 — interactive graph view, node details, task board, health dashboard, search & filter.
 
-### 📝 VS Code Extension
+> **API key protection (optional):** Set `KGN_API_KEY=your-secret` as an environment variable to require an `X-API-Key` header for all API endpoints (except health).
 
-Get syntax highlighting and validation for `.kgn` files:
+---
+
+### Task Queue & Multi-Agent
+
+KGN includes a full task orchestration system for coordinating multiple AI agents:
 
 ```bash
-code --install-extension baobab00.vscode-kgn
+# Enqueue a TASK node
+kgn task enqueue <task-node-uuid> --project my-project
+
+# Check out the next task (returns context package)
+kgn task checkout --project my-project
+
+# Complete or fail a task
+kgn task complete <task-queue-id>
+kgn task fail <task-queue-id> --reason "description"
+
+# View all tasks
+kgn task list --project my-project
+```
+
+**Workflow templates** create multi-step task chains automatically:
+
+```bash
+kgn workflow list
+kgn workflow run design-to-impl --project my-project --trigger <node-uuid>
+```
+
+Available templates: `design-to-impl`, `issue-resolution`, `knowledge-indexing`
+
+**Agent roles** control what each agent can do:
+
+| Role | Can create | Description |
+|---|---|---|
+| `admin` | All types | Full access (default) |
+| `genesis` | GOAL, SPEC, ARCH, CONSTRAINT, ASSUMPTION | Project design |
+| `worker` | SPEC, ARCH, LOGIC, TASK, SUMMARY | Implementation |
+| `reviewer` | DECISION, ISSUE, SUMMARY | Review & decisions |
+| `indexer` | SUMMARY | Knowledge indexing |
+
+```bash
+kgn agent list --project my-project
+kgn agent role --project my-project --agent-id <uuid> --role worker
 ```
 
 ---
 
-## Common Issues
+### Git/GitHub Sync
+
+KGN supports bidirectional sync between your database and Git:
+
+```bash
+# Export DB → filesystem
+kgn sync export --project my-project --target ./sync
+
+# Import filesystem → DB
+kgn sync import --project my-project --source ./sync
+
+# Push changes to GitHub
+kgn sync push --project my-project --target ./sync
+
+# Pull updates from GitHub
+kgn sync pull --project my-project --target ./sync
+
+# Generate Mermaid graph README
+kgn graph mermaid --project my-project
+kgn graph readme --project my-project --target ./sync
+```
+
+---
+
+### VS Code Extension
+
+Get syntax highlighting, diagnostics, and auto-completion for `.kgn` files:
+
+```bash
+code --install-extension baobab00.vscode-kgn
+pip install kgn-mcp[lsp]    # for Language Server features
+```
+
+Features: syntax highlighting, real-time validation (V1–V10 rules), auto-completion, hover info, go-to-definition, CodeLens, subgraph preview panel.
+
+---
+
+## CLI Quick Reference
+
+| What you want to do | Command |
+|---|---|
+| Create a project | `kgn init --project <name>` |
+| Ingest a file | `kgn ingest <file.kgn> --project <name>` |
+| Ingest a folder | `kgn ingest <folder>/ --project <name> --recursive` |
+| Check project status | `kgn status --project <name>` |
+| Graph health check | `kgn health --project <name>` |
+| Search nodes | `kgn query nodes --project <name> [--type SPEC] [--status ACTIVE]` |
+| Extract subgraph | `kgn query subgraph --project <name> --node-id <uuid>` |
+| Similarity search | `kgn query similar <uuid> --project <name> --top 5` |
+| Enqueue task | `kgn task enqueue <uuid> --project <name>` |
+| Checkout task | `kgn task checkout --project <name>` |
+| Complete task | `kgn task complete <task-queue-id>` |
+| List tasks | `kgn task list --project <name>` |
+| Start MCP server | `kgn mcp serve --project <name> [--role admin]` |
+| Auto-config MCP | `kgn mcp init --project <name> [--target claude-desktop]` |
+| Web dashboard | `kgn web serve --project <name> [--port 8080]` |
+| Export to filesystem | `kgn sync export --project <name> --target ./sync` |
+| Import from filesystem | `kgn sync import --project <name> --source ./sync` |
+| Scan conflicts | `kgn conflict scan --project <name>` |
+| List agents | `kgn agent list --project <name>` |
+| Run workflow | `kgn workflow run <template> --project <name> --trigger <uuid>` |
+| See all commands | `kgn --help` |
+
+---
+
+## Node Types & Statuses
+
+### Types
+
+| Type | Purpose |
+|---|---|
+| `GOAL` | High-level objective |
+| `ARCH` | Architecture decision or design |
+| `SPEC` | Specification or requirement |
+| `LOGIC` | Implementation logic |
+| `DECISION` | Explicit decision record |
+| `ISSUE` | Problem or bug report |
+| `TASK` | Actionable work item (can be queued) |
+| `CONSTRAINT` | System constraint |
+| `ASSUMPTION` | Documented assumption |
+| `SUMMARY` | Generated summary or index |
+
+### Statuses
+
+| Status | Meaning |
+|---|---|
+| `ACTIVE` | Currently valid and in use |
+| `DEPRECATED` | No longer recommended |
+| `SUPERSEDED` | Replaced by another node |
+| `ARCHIVED` | Kept for history |
+
+### Edge Types
+
+| Edge Type | Meaning |
+|---|---|
+| `DEPENDS_ON` | Source depends on target |
+| `IMPLEMENTS` | Source implements target |
+| `RESOLVES` | Source resolves target (issue/conflict) |
+| `SUPERSEDES` | Source replaces target |
+| `DERIVED_FROM` | Source is derived from target |
+| `CONTRADICTS` | Source contradicts target |
+| `CONSTRAINED_BY` | Source is constrained by target |
+
+---
+
+## Troubleshooting
 
 <details>
-<summary><b>"kgn" is not recognized</b></summary>
+<summary><b><code>kgn</code> command not found</b></summary>
 
-This usually means Python's Scripts folder isn't in your PATH.
+Python's Scripts folder is not in your PATH.
 
-**Fix (Windows):**
-1. Press `Win + R`, type `sysdm.cpl`, press Enter
+**Windows:**
+1. Press `Win + R`, type `sysdm.cpl`, and press Enter
 2. Go to **Advanced** → **Environment Variables**
-3. Under **Path**, add: `C:\Users\<YourName>\AppData\Local\Programs\Python\Python312\Scripts`
+3. Add to **Path**: `C:\Users\<YourName>\AppData\Local\Programs\Python\Python312\Scripts`
 4. Restart your terminal
 
-**Fix (Mac/Linux):**
+**macOS/Linux:**
 ```bash
 export PATH="$HOME/.local/bin:$PATH"
+# Add to ~/.bashrc or ~/.zshrc to make it permanent
 ```
-Add this line to your `~/.bashrc` or `~/.zshrc` file.
 
 </details>
 
 <details>
 <summary><b>Docker: "Cannot connect to the Docker daemon"</b></summary>
 
-Docker Desktop isn't running. Open Docker Desktop and wait for it to fully start (whale icon in taskbar).
+Docker Desktop isn't running. Open Docker Desktop and wait for the whale icon in your taskbar to show "Running".
 
 </details>
 
 <details>
 <summary><b>Database connection error</b></summary>
 
-Make sure the PostgreSQL container is running:
-
-```bash
-docker ps
-```
-
-If it's not listed, start it again:
-
-```bash
-docker compose -f docker/docker-compose.yml up -d postgres
-```
+1. Check that the PostgreSQL container is running: `docker ps`
+2. If not running: `docker compose -f docker/docker-compose.yml up -d postgres`
+3. Check your `.env` file has the correct connection settings (auto-generated by `kgn init`)
 
 </details>
 
 <details>
 <summary><b>"Permission denied" errors</b></summary>
 
-**Windows:** Run your terminal as Administrator.
+**Windows:** Run your terminal as Administrator, or use `pip install --user kgn-mcp`.
 
-**Mac/Linux:** Add `sudo` before the command, or use `pip install --user kgn-mcp`.
+**macOS/Linux:** Use `pip install --user kgn-mcp` or prefix with `sudo`.
+
+</details>
+
+<details>
+<summary><b>MCP server not connecting to Claude</b></summary>
+
+1. Ensure `kgn mcp serve --project <name>` works standalone in your terminal
+2. Check your `claude_desktop_config.json` for syntax errors (valid JSON?)
+3. Restart Claude Desktop completely
+4. Look for the 🔨 icon — if missing, check Claude's MCP logs
 
 </details>
 
 ---
 
-## Quick Reference
-
-| What you want to do | Command |
-|---|---|
-| Create a project | `kgn init --project <name>` |
-| Add knowledge | `kgn ingest <file.kgn> --project <name>` |
-| Add a whole folder | `kgn ingest <folder>/ --project <name> --recursive` |
-| Check status | `kgn status --project <name>` |
-| Search nodes | `kgn query nodes --project <name>` |
-| Setup MCP client | `kgn mcp init --project <name> [--target claude-code]` |
-| Start MCP server | `kgn mcp serve --project <name> [--role admin]` |
-| Web dashboard | `kgn web serve --project <name>` |
-| See all commands | `kgn --help` |
-
----
-
-**Need more help?** Check the [full README](README.md) or open an [issue on GitHub](https://github.com/baobab00/kgn/issues).
+**Need more help?** See the full [README](README.md) for details, the [Architecture Guide](ARCHITECTURE.md) for internals, or open an [issue on GitHub](https://github.com/baobab00/kgn/issues).

@@ -9,6 +9,7 @@ from typing import Annotated
 import typer
 
 from kgn.cli._app import _project_not_found, console, graph_app
+from kgn.errors import KgnError
 
 # ── graph mermaid ─────────────────────────────────────────────────────
 
@@ -65,6 +66,9 @@ def graph_mermaid(
 
     except typer.Exit:
         raise
+    except KgnError as exc:
+        console.print(f"\n[bold red][{exc.code}] Error:[/bold red] {exc}\n")
+        raise typer.Exit(code=1) from exc
     except Exception as exc:
         console.print(f"\n[bold red]Error:[/bold red] {exc}\n")
         raise typer.Exit(code=1) from exc
@@ -108,6 +112,9 @@ def graph_readme(
 
     except typer.Exit:
         raise
+    except KgnError as exc:
+        console.print(f"\n[bold red][{exc.code}] Error:[/bold red] {exc}\n")
+        raise typer.Exit(code=1) from exc
     except Exception as exc:
         console.print(f"\n[bold red]Error:[/bold red] {exc}\n")
         raise typer.Exit(code=1) from exc

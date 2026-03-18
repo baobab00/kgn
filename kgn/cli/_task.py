@@ -11,6 +11,7 @@ from rich.table import Table
 from rich.text import Text
 
 from kgn.cli._app import _project_not_found, console, task_app
+from kgn.errors import KgnError
 
 # ── task enqueue ───────────────────────────────────────────────────────
 
@@ -58,6 +59,9 @@ def task_enqueue(
 
     except typer.Exit:
         raise
+    except KgnError as e:
+        console.print(f"\n[bold red][{e.code}] Error:[/bold red] {e}\n")
+        raise typer.Exit(code=1) from e
     except ValueError as e:
         console.print(f"\n[bold red]Error:[/bold red] {e}\n")
         raise typer.Exit(code=1) from e
@@ -121,6 +125,9 @@ def task_checkout(
 
     except typer.Exit:
         raise
+    except KgnError as e:
+        console.print(f"\n[bold red][{e.code}] Error:[/bold red] {e}\n")
+        raise typer.Exit(code=1) from e
     except Exception as e:
         console.print(f"\n[bold red]Error:[/bold red] {e}\n")
         raise typer.Exit(code=1) from e
@@ -189,6 +196,9 @@ def task_complete(
 
     except typer.Exit:
         raise
+    except KgnError as e:
+        console.print(f"\n[bold red][{e.code}] Error:[/bold red] {e}\n")
+        raise typer.Exit(code=1) from e
     except ValueError as e:
         console.print(f"\n[bold red]Error:[/bold red] {e}\n")
         raise typer.Exit(code=1) from e
@@ -235,6 +245,9 @@ def task_fail(
 
     except typer.Exit:
         raise
+    except KgnError as e:
+        console.print(f"\n[bold red][{e.code}] Error:[/bold red] {e}\n")
+        raise typer.Exit(code=1) from e
     except ValueError as e:
         console.print(f"\n[bold red]Error:[/bold red] {e}\n")
         raise typer.Exit(code=1) from e
@@ -273,17 +286,21 @@ def task_list(
                 console.print("\n[dim]No tasks found.[/dim]\n")
                 raise typer.Exit(code=0)
 
-            # Resolve node titles
-            node_titles: dict[uuid.UUID, str] = {}
+            # Resolve node titles (batch)
+            node_id_set = {t.task_node_id for t in tasks}
+            node_map = repo.get_nodes_by_ids(node_id_set)
+            node_titles: dict[uuid.UUID, str] = {nid: n.title for nid, n in node_map.items()}
             for t in tasks:
                 if t.task_node_id not in node_titles:
-                    node = repo.get_node_by_id(t.task_node_id)
-                    node_titles[t.task_node_id] = node.title if node else "(deleted)"
+                    node_titles[t.task_node_id] = "(deleted)"
 
             _print_task_list_table(tasks, node_titles)
 
     except typer.Exit:
         raise
+    except KgnError as e:
+        console.print(f"\n[bold red][{e.code}] Error:[/bold red] {e}\n")
+        raise typer.Exit(code=1) from e
     except Exception as e:
         console.print(f"\n[bold red]Error:[/bold red] {e}\n")
         raise typer.Exit(code=1) from e
@@ -346,6 +363,9 @@ def task_log(
 
     except typer.Exit:
         raise
+    except KgnError as e:
+        console.print(f"\n[bold red][{e.code}] Error:[/bold red] {e}\n")
+        raise typer.Exit(code=1) from e
     except Exception as e:
         console.print(f"\n[bold red]Error:[/bold red] {e}\n")
         raise typer.Exit(code=1) from e

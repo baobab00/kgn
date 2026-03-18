@@ -383,19 +383,26 @@ class ConflictResolutionService:
                     code=KgnErrorCode.CONFLICT_RESOLUTION_FAILED,
                     message=f"No previous version found for node {node_id}",
                 )
-            # Revert node content to pre-conflict version
-            # upsert_node() saves current state to node_versions,
-            # then updates — no private method access needed.
+            # Revert node to pre-conflict version.
+            # Phase 12 / Step 7: restore ALL mutable fields from the
+            # version snapshot.  Fields that are NULL in legacy versions
+            # (pre-migration-010) gracefully fall back to the current
+            # node value so old data is not lost.
             reverted = NodeRecord(
                 id=node.id,
                 project_id=node.project_id,
-                type=node.type,
-                status=node.status,
+                type=latest_ver.get("type") or node.type,
+                status=latest_ver.get("status") or node.status,
                 title=latest_ver["title"],
                 body_md=latest_ver["body_md"],
+                file_path=latest_ver.get("file_path") or node.file_path,
                 content_hash=latest_ver.get("content_hash"),
-                tags=node.tags,
-                confidence=node.confidence,
+                tags=latest_ver.get("tags") or node.tags,
+                confidence=(
+                    latest_ver.get("confidence")
+                    if latest_ver.get("confidence") is not None
+                    else node.confidence
+                ),
                 created_by=agent_id or node.created_by,
             )
             self._repo.upsert_node(reverted)
@@ -415,7 +422,11 @@ class ConflictResolutionService:
             )
 
         else:  # merge
-            assert merge_body is not None
+            if merge_body is None:
+                raise KgnError(
+                    code=KgnErrorCode.CONFLICT_RESOLUTION_FAILED,
+                    message="merge_body is required for merge resolution",
+                )
             # upsert_node() saves current state to node_versions,
             # then updates — no private method access needed.
             merged = NodeRecord(

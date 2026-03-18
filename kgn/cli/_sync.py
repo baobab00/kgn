@@ -9,6 +9,7 @@ import typer
 from rich.table import Table
 
 from kgn.cli._app import _project_not_found, console, sync_app
+from kgn.errors import KgnError
 
 # ── sync export ────────────────────────────────────────────────────────
 
@@ -107,6 +108,9 @@ def sync_export(
 
     except typer.Exit:
         raise
+    except KgnError as exc:
+        console.print(f"\n[bold red][{exc.code}] Error:[/bold red] {exc}\n")
+        raise typer.Exit(code=1) from exc
     except Exception as exc:
         console.print(f"\n[bold red]Error:[/bold red] {exc}\n")
         raise typer.Exit(code=1) from exc
@@ -173,6 +177,9 @@ def sync_import(
 
     except typer.Exit:
         raise
+    except KgnError as exc:
+        console.print(f"\n[bold red][{exc.code}] Error:[/bold red] {exc}\n")
+        raise typer.Exit(code=1) from exc
     except Exception as exc:
         console.print(f"\n[bold red]Error:[/bold red] {exc}\n")
         raise typer.Exit(code=1) from exc
@@ -246,6 +253,9 @@ def sync_status(
 
     except typer.Exit:
         raise
+    except KgnError as exc:
+        console.print(f"\n[bold red][{exc.code}] Error:[/bold red] {exc}\n")
+        raise typer.Exit(code=1) from exc
     except Exception as exc:
         console.print(f"\n[bold red]Error:[/bold red] {exc}\n")
         raise typer.Exit(code=1) from exc
@@ -315,6 +325,9 @@ def sync_push(
 
     except typer.Exit:
         raise
+    except KgnError as exc:
+        console.print(f"\n[bold red][{exc.code}] Error:[/bold red] {exc}\n")
+        raise typer.Exit(code=1) from exc
     except Exception as exc:
         console.print(f"\n[bold red]Error:[/bold red] {exc}\n")
         raise typer.Exit(code=1) from exc
@@ -396,6 +409,9 @@ def sync_pull(
 
     except typer.Exit:
         raise
+    except KgnError as exc:
+        console.print(f"\n[bold red][{exc.code}] Error:[/bold red] {exc}\n")
+        raise typer.Exit(code=1) from exc
     except Exception as exc:
         console.print(f"\n[bold red]Error:[/bold red] {exc}\n")
         raise typer.Exit(code=1) from exc

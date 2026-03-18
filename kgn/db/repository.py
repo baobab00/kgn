@@ -18,6 +18,7 @@ from datetime import datetime
 from psycopg import Connection
 from psycopg.rows import dict_row
 
+from kgn.errors import KgnError, KgnErrorCode
 from kgn.models.edge import EdgeRecord
 from kgn.models.enums import ActivityType, EdgeType, NodeStatus, NodeType
 from kgn.models.node import NodeRecord
@@ -149,7 +150,11 @@ class KgnRepository:
             "INSERT INTO projects (name) VALUES (%s) RETURNING id",
             (name,),
         ).fetchone()
-        assert row is not None
+        if row is None:
+            raise KgnError(
+                code=KgnErrorCode.INTERNAL_ERROR,
+                message="INSERT projects RETURNING yielded no row",
+            )
         return row[0]
 
     # ── Agent ──────────────────────────────────────────────────────────
@@ -184,7 +189,11 @@ class KgnRepository:
             "INSERT INTO agents (project_id, agent_key, role) VALUES (%s, %s, %s) RETURNING id",
             (project_id, agent_key, role),
         ).fetchone()
-        assert row is not None
+        if row is None:
+            raise KgnError(
+                code=KgnErrorCode.INTERNAL_ERROR,
+                message="INSERT agents RETURNING yielded no row",
+            )
         return row[0]
 
     def get_agent_role(self, agent_id: uuid.UUID) -> str | None:
@@ -335,20 +344,28 @@ class KgnRepository:
         )
 
     def _save_version(self, node: NodeRecord) -> None:
-        """Save old state to ``node_versions`` before an UPDATE."""
+        """Save old state to ``node_versions`` before an UPDATE.
+
+        Captures the complete node snapshot including type, status,
+        file_path, tags, and confidence (Phase 12 / Step 2).
+        """
         # Get next version number
         row = self._conn.execute(
             "SELECT COALESCE(MAX(version), 0) + 1 FROM node_versions WHERE node_id = %s",
             (node.id,),
         ).fetchone()
-        assert row is not None
+        if row is None:
+            msg = f"Failed to compute next version for node {node.id}"
+            raise KgnError(KgnErrorCode.INTERNAL_ERROR, msg)
         next_version = row[0]
 
         self._conn.execute(
             """
             INSERT INTO node_versions
-                (node_id, version, title, body_md, content_hash, updated_by, updated_at)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
+                (node_id, version, title, body_md, content_hash,
+                 updated_by, updated_at,
+                 type, status, file_path, tags, confidence)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """,
             (
                 node.id,
@@ -358,6 +375,11 @@ class KgnRepository:
                 node.content_hash,
                 node.created_by,
                 node.updated_at or datetime.now().astimezone(),
+                node.type,
+                node.status,
+                node.file_path,
+                node.tags,
+                node.confidence,
             ),
         )
 
@@ -464,7 +486,11 @@ class KgnRepository:
                 "AND from_node_id = %s AND to_node_id = %s AND type = %s",
                 (edge.project_id, edge.from_node_id, edge.to_node_id, edge.type.value),
             ).fetchone()
-            assert existing is not None
+            if existing is None:
+                raise KgnError(
+                    code=KgnErrorCode.INTERNAL_ERROR,
+                    message="Duplicate edge not found after ON CONFLICT",
+                )
             return existing[0]
 
         # Log activity
@@ -541,13 +567,14 @@ class KgnRepository:
                         next_frontier.append(adj_id)
             frontier = next_frontier
 
-        # Fetch node details
+        # Fetch node details (batch)
         if not visited:
             return []
 
+        nodes_map = self.get_nodes_by_ids(set(visited.keys()))
         result: list[SubgraphNode] = []
         for nid, d in visited.items():
-            node = self.get_node_by_id(nid)
+            node = nodes_map.get(nid)
             if node is not None:
                 result.append(
                     SubgraphNode(
@@ -807,7 +834,8 @@ class KgnRepository:
             """,
             (project_id,),
         ).fetchone()
-        assert row is not None
+        if row is None:
+            raise KgnError(code=KgnErrorCode.INTERNAL_ERROR, message="COUNT query returned no rows")
         return row[0]
 
     def last_ingest_at(self, project_id: uuid.UUID) -> datetime | None:
@@ -828,7 +856,8 @@ class KgnRepository:
             "SELECT COUNT(*) FROM nodes WHERE project_id = %s AND status = %s",
             (project_id, NodeStatus.ACTIVE.value),
         ).fetchone()
-        assert row is not None
+        if row is None:
+            raise KgnError(code=KgnErrorCode.INTERNAL_ERROR, message="COUNT query returned no rows")
         return row[0]
 
     def count_active_orphan_nodes(self, project_id: uuid.UUID) -> int:
@@ -843,7 +872,8 @@ class KgnRepository:
             """,
             (project_id, NodeStatus.ACTIVE.value),
         ).fetchone()
-        assert row is not None
+        if row is None:
+            raise KgnError(code=KgnErrorCode.INTERNAL_ERROR, message="COUNT query returned no rows")
         return row[0]
 
     def count_contradicts_edges(self, project_id: uuid.UUID) -> int:
@@ -852,7 +882,8 @@ class KgnRepository:
             "SELECT COUNT(*) FROM edges WHERE project_id = %s AND type = %s",
             (project_id, EdgeType.CONTRADICTS.value),
         ).fetchone()
-        assert row is not None
+        if row is None:
+            raise KgnError(code=KgnErrorCode.INTERNAL_ERROR, message="COUNT query returned no rows")
         return row[0]
 
     def count_pending_contradicts(self, project_id: uuid.UUID) -> int:
@@ -862,7 +893,8 @@ class KgnRepository:
             "WHERE project_id = %s AND type = 'CONTRADICTS' AND status = 'PENDING'",
             (project_id,),
         ).fetchone()
-        assert row is not None
+        if row is None:
+            raise KgnError(code=KgnErrorCode.INTERNAL_ERROR, message="COUNT query returned no rows")
         return row[0]
 
     def count_spec_nodes(self, project_id: uuid.UUID) -> int:
@@ -872,7 +904,8 @@ class KgnRepository:
             "WHERE project_id = %s AND type = 'SPEC' AND status != 'ARCHIVED'",
             (project_id,),
         ).fetchone()
-        assert row is not None
+        if row is None:
+            raise KgnError(code=KgnErrorCode.INTERNAL_ERROR, message="COUNT query returned no rows")
         return row[0]
 
     def count_superseded_stale(self, project_id: uuid.UUID) -> int:
@@ -893,7 +926,8 @@ class KgnRepository:
                 EdgeType.SUPERSEDES.value,
             ),
         ).fetchone()
-        assert row is not None
+        if row is None:
+            raise KgnError(code=KgnErrorCode.INTERNAL_ERROR, message="COUNT query returned no rows")
         return row[0]
 
     def count_wip_tasks(self, project_id: uuid.UUID) -> int:
@@ -902,7 +936,8 @@ class KgnRepository:
             "SELECT COUNT(*) FROM task_queue WHERE project_id = %s AND state = 'IN_PROGRESS'",
             (project_id,),
         ).fetchone()
-        assert row is not None
+        if row is None:
+            raise KgnError(code=KgnErrorCode.INTERNAL_ERROR, message="COUNT query returned no rows")
         return row[0]
 
     def count_open_assumptions(self, project_id: uuid.UUID) -> int:
@@ -911,7 +946,8 @@ class KgnRepository:
             "SELECT COUNT(*) FROM nodes WHERE project_id = %s AND type = %s AND status = %s",
             (project_id, NodeType.ASSUMPTION.value, NodeStatus.ACTIVE.value),
         ).fetchone()
-        assert row is not None
+        if row is None:
+            raise KgnError(code=KgnErrorCode.INTERNAL_ERROR, message="COUNT query returned no rows")
         return row[0]
 
     def get_edges_for_subgraph(
@@ -1211,7 +1247,11 @@ class KgnRepository:
                 "AND from_node_id = %s AND to_node_id = %s AND type = 'CONTRADICTS'",
                 (project_id, from_node_id, to_node_id),
             ).fetchone()
-            assert existing is not None
+            if existing is None:
+                raise KgnError(
+                    code=KgnErrorCode.INTERNAL_ERROR,
+                    message="Duplicate CONTRADICTS edge not found after ON CONFLICT",
+                )
             return existing[0]
         return row[0]
 
@@ -1298,7 +1338,11 @@ class KgnRepository:
             "VALUES (%s, %s, %s, %s::task_state) RETURNING id",
             (project_id, task_node_id, priority, state),
         ).fetchone()
-        assert result is not None
+        if result is None:
+            raise KgnError(
+                code=KgnErrorCode.INTERNAL_ERROR,
+                message="INSERT task_queue RETURNING yielded no row",
+            )
         return result[0]
 
     def checkout_task(
@@ -1640,10 +1684,12 @@ class KgnRepository:
         """Get the most recent version entry for a node.
 
         Returns dict with ``version``, ``updated_by``, ``updated_at``,
-        ``title``, ``body_md``, ``content_hash`` or None if no versions exist.
+        ``title``, ``body_md``, ``content_hash``, ``type``, ``status``,
+        ``file_path``, ``tags``, ``confidence`` or None if no versions exist.
         """
         return self._dict_fetchone(
-            "SELECT version, updated_by, updated_at, title, body_md, content_hash "
+            "SELECT version, updated_by, updated_at, title, body_md, content_hash, "
+            "type, status, file_path, tags, confidence "
             "FROM node_versions "
             "WHERE node_id = %s "
             "ORDER BY version DESC LIMIT 1",
@@ -1657,7 +1703,8 @@ class KgnRepository:
     ) -> dict | None:
         """Get a specific version entry for a node."""
         return self._dict_fetchone(
-            "SELECT version, updated_by, updated_at, title, body_md, content_hash "
+            "SELECT version, updated_by, updated_at, title, body_md, content_hash, "
+            "type, status, file_path, tags, confidence "
             "FROM node_versions "
             "WHERE node_id = %s AND version = %s",
             (node_id, version),

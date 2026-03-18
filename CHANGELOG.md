@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0]
+
+### Added
+
+- `node_versions` table with full snapshot columns (migration 010) — every upsert preserves complete field-level history
+- `accept_a` conflict resolution restores ALL mutable fields (title, body, type, status, tags, confidence)
+- Optional API key middleware for web dashboard — set `KGN_API_KEY` env var to require `X-API-Key` header on `/api/v1/*`
+- `KgnServerState` dataclass for MCP typed server state — replaces 31 dynamic `_kgn_*` attributes
+- CLI `except KgnError` branches with structured `[KGN-xxx]` error codes across 10 CLI modules (40 locations)
+- Enum sync E2E test — Python `StrEnum` ↔ PostgreSQL enum labels verified for all 6 enum types
+- Phase 12 integration scenarios: accept_a restoration, handoff chain non-contamination, embedding failure isolation, depth clamping
+
+### Changed
+
+- Handoff `propagate_context` strips prior handoff sections before injection (no transitive contamination)
+- `EmbeddingClient` retries with configurable `max_retries`/`retry_delay`; never blocks ingest on embedding failure
+- `assert` guards replaced with `KgnError` raises in service layer (subgraph depth, role validation)
+- Subgraph depth clamped to `MAX_SUBGRAPH_DEPTH=5` instead of raising on out-of-range
+- N+1 query patterns converted to batch operations (`get_nodes_by_ids`, `get_edges_batch`) in 5 locations
+- Ingest pipeline deduplicated — `_upsert_from_parsed()` shared between file and text ingest paths
+- `IngestFileResult` includes `content_hash` field for change tracking
+- `__version__`: 0.11.4 → 0.12.0
+
+### Fixed
+
+- `_save_version()` now persists all node fields (title, body_md, type, status, tags, confidence) — previously missed status/tags/confidence
+
 ## [0.11.4]
 
 ### Added
