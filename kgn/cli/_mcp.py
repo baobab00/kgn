@@ -13,7 +13,6 @@ import typer
 from rich.console import Console
 
 from kgn.cli._app import console, mcp_app
-from kgn.errors import KgnError
 
 # ── MCP init ───────────────────────────────────────────────────────────
 

@@ -7,7 +7,6 @@ from typing import Annotated
 import typer
 
 from kgn.cli._app import _project_not_found, console, web_app
-from kgn.errors import KgnError
 
 # ── web serve ─────────────────────────────────────────────────────────
 

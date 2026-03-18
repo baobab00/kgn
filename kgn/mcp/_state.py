@@ -3,15 +3,10 @@
 from __future__ import annotations
 
 import uuid
-from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Generator
-
-    from psycopg import Connection
-
     from kgn.embedding.client import EmbeddingClient
 
 

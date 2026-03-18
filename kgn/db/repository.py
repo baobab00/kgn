@@ -151,7 +151,10 @@ class KgnRepository:
             (name,),
         ).fetchone()
         if row is None:
-            raise KgnError(code=KgnErrorCode.INTERNAL_ERROR, message="INSERT projects RETURNING yielded no row")
+            raise KgnError(
+                code=KgnErrorCode.INTERNAL_ERROR,
+                message="INSERT projects RETURNING yielded no row",
+            )
         return row[0]
 
     # ── Agent ──────────────────────────────────────────────────────────
@@ -187,7 +190,10 @@ class KgnRepository:
             (project_id, agent_key, role),
         ).fetchone()
         if row is None:
-            raise KgnError(code=KgnErrorCode.INTERNAL_ERROR, message="INSERT agents RETURNING yielded no row")
+            raise KgnError(
+                code=KgnErrorCode.INTERNAL_ERROR,
+                message="INSERT agents RETURNING yielded no row",
+            )
         return row[0]
 
     def get_agent_role(self, agent_id: uuid.UUID) -> str | None:
@@ -481,7 +487,10 @@ class KgnRepository:
                 (edge.project_id, edge.from_node_id, edge.to_node_id, edge.type.value),
             ).fetchone()
             if existing is None:
-                raise KgnError(code=KgnErrorCode.INTERNAL_ERROR, message="Duplicate edge not found after ON CONFLICT")
+                raise KgnError(
+                    code=KgnErrorCode.INTERNAL_ERROR,
+                    message="Duplicate edge not found after ON CONFLICT",
+                )
             return existing[0]
 
         # Log activity
@@ -1239,7 +1248,10 @@ class KgnRepository:
                 (project_id, from_node_id, to_node_id),
             ).fetchone()
             if existing is None:
-                raise KgnError(code=KgnErrorCode.INTERNAL_ERROR, message="Duplicate CONTRADICTS edge not found after ON CONFLICT")
+                raise KgnError(
+                    code=KgnErrorCode.INTERNAL_ERROR,
+                    message="Duplicate CONTRADICTS edge not found after ON CONFLICT",
+                )
             return existing[0]
         return row[0]
 
@@ -1327,7 +1339,10 @@ class KgnRepository:
             (project_id, task_node_id, priority, state),
         ).fetchone()
         if result is None:
-            raise KgnError(code=KgnErrorCode.INTERNAL_ERROR, message="INSERT task_queue RETURNING yielded no row")
+            raise KgnError(
+                code=KgnErrorCode.INTERNAL_ERROR,
+                message="INSERT task_queue RETURNING yielded no row",
+            )
         return result[0]
 
     def checkout_task(

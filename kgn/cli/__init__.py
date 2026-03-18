@@ -24,6 +24,5 @@ from kgn.cli import (  # noqa: F401
     _workflow,
 )
 from kgn.cli._app import app  # noqa: F401 — re-exported entry point
-from kgn.errors import KgnError
 
 __all__ = ["app"]

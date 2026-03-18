@@ -10,7 +10,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from kgn.embedding.client import MODEL_DIMENSIONS, _MAX_RETRIES
+from kgn.embedding.client import _MAX_RETRIES, MODEL_DIMENSIONS
 from kgn.errors import KgnError, KgnErrorCode
 
 # ── Helpers ────────────────────────────────────────────────────────────
@@ -197,9 +197,11 @@ class TestEmbedErrorHandling:
             from kgn.embedding.client import OpenAIEmbeddingClient
 
             client = OpenAIEmbeddingClient(api_key="sk-test")
-            with patch("kgn.embedding.client.time.sleep"):  # skip actual sleep
-                with pytest.raises(KgnError) as exc_info:
-                    client.embed(["hello"])
+            with (
+                patch("kgn.embedding.client.time.sleep"),
+                pytest.raises(KgnError) as exc_info,
+            ):
+                client.embed(["hello"])
 
         assert exc_info.value.code == KgnErrorCode.EMBEDDING_API_TIMEOUT
 
@@ -265,9 +267,11 @@ class TestEmbedErrorHandling:
             from kgn.embedding.client import OpenAIEmbeddingClient
 
             client = OpenAIEmbeddingClient(api_key="sk-test")
-            with patch("kgn.embedding.client.time.sleep"):
-                with pytest.raises(KgnError) as exc_info:
-                    client.embed(["hello"])
+            with (
+                patch("kgn.embedding.client.time.sleep"),
+                pytest.raises(KgnError) as exc_info,
+            ):
+                client.embed(["hello"])
 
         assert exc_info.value.code == KgnErrorCode.EMBEDDING_API_FAILED
         assert openai_client.embeddings.create.call_count == _MAX_RETRIES

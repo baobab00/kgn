@@ -97,15 +97,8 @@ def create_server(
     )
 
     # Build typed state
-    if conn is not None:
-        conn_factory = lambda: _fixed_connection(conn)  # noqa: E731
-    else:
-        conn_factory = _default_connection
-
-    if embedding_client is _SENTINEL:
-        embed_client = create_embedding_client()
-    else:
-        embed_client = embedding_client
+    conn_factory = (lambda: _fixed_connection(conn)) if conn is not None else _default_connection  # noqa: E731
+    embed_client = create_embedding_client() if embedding_client is _SENTINEL else embedding_client
 
     state = KgnServerState(
         project_id=project_id,

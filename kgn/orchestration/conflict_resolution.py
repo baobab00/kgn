@@ -398,7 +398,11 @@ class ConflictResolutionService:
                 file_path=latest_ver.get("file_path") or node.file_path,
                 content_hash=latest_ver.get("content_hash"),
                 tags=latest_ver.get("tags") or node.tags,
-                confidence=latest_ver.get("confidence") if latest_ver.get("confidence") is not None else node.confidence,
+                confidence=(
+                    latest_ver.get("confidence")
+                    if latest_ver.get("confidence") is not None
+                    else node.confidence
+                ),
                 created_by=agent_id or node.created_by,
             )
             self._repo.upsert_node(reverted)

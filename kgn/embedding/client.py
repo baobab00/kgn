@@ -127,8 +127,8 @@ class OpenAIEmbeddingClient:
                     ) from exc
 
                 # Rate limit (429) or transient server errors — retry
-                if "ratelimit" in exc_name.lower() or "rate" in str(exc).lower() or "503" in str(exc):
-                    if attempt < _MAX_RETRIES - 1:
+                is_rate = "ratelimit" in exc_name.lower() or "rate" in str(exc).lower()
+                if (is_rate or "503" in str(exc)) and attempt < _MAX_RETRIES - 1:
                         delay = _RETRY_BASE_DELAY * (2 ** attempt)
                         log.warning(
                             "embedding_rate_limit_retry",
@@ -139,7 +139,7 @@ class OpenAIEmbeddingClient:
                         time.sleep(delay)
                         continue
 
-                # All other errors — fail immediately
+                # Rate limit retries exhausted or other errors — fail immediately
                 raise KgnError(
                     KgnErrorCode.EMBEDDING_API_FAILED,
                     f"Embedding API call failed: {exc}",

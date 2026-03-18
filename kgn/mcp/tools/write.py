@@ -179,7 +179,8 @@ def register_write_tools(server: FastMCP) -> None:
                 if content_project != state.project_name:
                     edge_project_warning = (
                         f"project_id '{content_project}' differs from server "
-                        f"project '{state.project_name}'. Edges stored under '{state.project_name}'."
+                        f"project '{state.project_name}'. "
+                        f"Edges stored under '{state.project_name}'."
                     )
             except Exception:  # noqa: BLE001
                 pass  # parse error handled by IngestService below

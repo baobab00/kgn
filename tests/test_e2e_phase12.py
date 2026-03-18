@@ -312,7 +312,7 @@ class TestEnumSync:
         py_enum: type,
     ) -> None:
         rows = db_conn.execute(
-            "SELECT unnest(enum_range(NULL::{typ}))::text".format(typ=db_type),
+            f"SELECT unnest(enum_range(NULL::{db_type}))::text",
         ).fetchall()
         db_values = {r[0] for r in rows}
         py_values = {v.value for v in py_enum}

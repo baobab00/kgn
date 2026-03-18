@@ -605,7 +605,7 @@ class TestE2EWebNotInstalled:
 class TestAPIKeyMiddleware:
     """Verify optional API key middleware (I-08 security hardening)."""
 
-    def _make_app(self, api_key: str = "") -> "FastAPI":
+    def _make_app(self, api_key: str = ""):
         """Create app with optional API key, bypassing module-level cache."""
         import importlib
         import sys

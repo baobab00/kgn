@@ -7,7 +7,6 @@ from typing import Annotated
 import typer
 
 from kgn.cli._app import console, lsp_app
-from kgn.errors import KgnError
 
 # ── lsp serve ─────────────────────────────────────────────────────────
 
