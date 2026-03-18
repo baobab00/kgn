@@ -74,8 +74,7 @@ class TestMigration010NodeVersionsFullSnapshot:
     def test_existing_rows_have_null_new_columns(self, db_conn) -> None:
         """Pre-existing node_versions rows have NULL for new columns."""
         row = db_conn.execute(
-            "SELECT type, status, file_path, confidence "
-            "FROM node_versions LIMIT 1",
+            "SELECT type, status, file_path, confidence FROM node_versions LIMIT 1",
         ).fetchone()
         # If there are rows, they should have NULLs (backfill not done)
         if row is not None:

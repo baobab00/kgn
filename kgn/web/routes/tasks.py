@@ -77,9 +77,7 @@ async def list_tasks(
         # Resolve task node titles for display (batch)
         node_ids = {t.task_node_id for t in tasks}
         node_map = repo.get_nodes_by_ids(node_ids)
-        titles: dict[uuid.UUID, str] = {
-            nid: n.title for nid, n in node_map.items()
-        }
+        titles: dict[uuid.UUID, str] = {nid: n.title for nid, n in node_map.items()}
 
         # Resolve agent info for leased tasks
         agent_ids = {t.leased_by for t in tasks if t.leased_by}

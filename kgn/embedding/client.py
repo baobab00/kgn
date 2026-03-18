@@ -105,7 +105,7 @@ class OpenAIEmbeddingClient:
                 # Timeout-class errors
                 if "timeout" in exc_name.lower() or "Timeout" in str(type(exc).__mro__):
                     if attempt < _MAX_RETRIES - 1:
-                        delay = _RETRY_BASE_DELAY * (2 ** attempt)
+                        delay = _RETRY_BASE_DELAY * (2**attempt)
                         log.warning(
                             "embedding_timeout_retry",
                             attempt=attempt + 1,
@@ -129,15 +129,15 @@ class OpenAIEmbeddingClient:
                 # Rate limit (429) or transient server errors — retry
                 is_rate = "ratelimit" in exc_name.lower() or "rate" in str(exc).lower()
                 if (is_rate or "503" in str(exc)) and attempt < _MAX_RETRIES - 1:
-                        delay = _RETRY_BASE_DELAY * (2 ** attempt)
-                        log.warning(
-                            "embedding_rate_limit_retry",
-                            attempt=attempt + 1,
-                            delay=delay,
-                            error=str(exc),
-                        )
-                        time.sleep(delay)
-                        continue
+                    delay = _RETRY_BASE_DELAY * (2**attempt)
+                    log.warning(
+                        "embedding_rate_limit_retry",
+                        attempt=attempt + 1,
+                        delay=delay,
+                        error=str(exc),
+                    )
+                    time.sleep(delay)
+                    continue
 
                 # Rate limit retries exhausted or other errors — fail immediately
                 raise KgnError(

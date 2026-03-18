@@ -53,6 +53,7 @@ class TestCreateServer:
         server = create_server(project_name, conn=db_conn)
 
         from kgn.mcp._state import get_state
+
         state = get_state(server)
         assert state.project_id == pid
         assert state.project_name == project_name

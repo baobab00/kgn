@@ -289,9 +289,7 @@ def task_list(
             # Resolve node titles (batch)
             node_id_set = {t.task_node_id for t in tasks}
             node_map = repo.get_nodes_by_ids(node_id_set)
-            node_titles: dict[uuid.UUID, str] = {
-                nid: n.title for nid, n in node_map.items()
-            }
+            node_titles: dict[uuid.UUID, str] = {nid: n.title for nid, n in node_map.items()}
             for t in tasks:
                 if t.task_node_id not in node_titles:
                     node_titles[t.task_node_id] = "(deleted)"

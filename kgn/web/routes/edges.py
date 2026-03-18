@@ -63,9 +63,7 @@ async def list_edges(
         # Resolve peer titles for incoming (peer = from_node) and outgoing (peer = to_node)
         peer_ids = {e.from_node_id for e in incoming} | {e.to_node_id for e in outgoing}
         peer_nodes = repo.get_nodes_by_ids(peer_ids)
-        peer_titles: dict[uuid.UUID, str] = {
-            pid: n.title for pid, n in peer_nodes.items()
-        }
+        peer_titles: dict[uuid.UUID, str] = {pid: n.title for pid, n in peer_nodes.items()}
 
     incoming_dicts = [
         _edge_to_dict(e, peer_title=peer_titles.get(e.from_node_id)) for e in incoming

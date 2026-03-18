@@ -557,12 +557,18 @@ class TestResolveConflict:
 
         # 4. Create review task
         conflict_svc.create_review_task(
-            project_id, node.id, agent_id, agent_b,
+            project_id,
+            node.id,
+            agent_id,
+            agent_b,
         )
 
         # 5. Resolve with accept_a
         result = conflict_svc.resolve(
-            project_id, node.id, "accept_a", agent_id=agent_id,
+            project_id,
+            node.id,
+            "accept_a",
+            agent_id=agent_id,
         )
         assert result.resolution == "accept_a"
 

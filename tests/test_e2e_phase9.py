@@ -643,9 +643,7 @@ class TestAPIKeyMiddleware:
         active = _enter_patches(patches)
         try:
             client = TestClient(app)
-            resp = client.get(
-                "/api/v1/nodes", headers={"X-API-Key": "secret-key-42"}
-            )
+            resp = client.get("/api/v1/nodes", headers={"X-API-Key": "secret-key-42"})
             assert resp.status_code == 200
         finally:
             _exit_patches(active)

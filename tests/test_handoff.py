@@ -1020,32 +1020,46 @@ class TestHandoffTransitiveContamination:
         from kgn.models.edge import EdgeRecord
 
         task_a = _make_task_node(
-            repo, project_id, agent_id,
+            repo,
+            project_id,
+            agent_id,
             title="Task A",
             body_md="## A Result\n\nOriginal content from A.",
         )
         task_b = _make_task_node(
-            repo, project_id, agent_id,
+            repo,
+            project_id,
+            agent_id,
             title="Task B",
             body_md="## B Content\n\nOriginal content from B.",
         )
         task_c = _make_task_node(
-            repo, project_id, agent_id,
+            repo,
+            project_id,
+            agent_id,
             title="Task C",
             body_md="## C Content\n\nOriginal content from C.",
         )
 
         # B depends on A, C depends on B
-        repo.insert_edge(EdgeRecord(
-            project_id=project_id,
-            from_node_id=task_b.id, to_node_id=task_a.id,
-            type=EdgeType.DEPENDS_ON, created_by=agent_id,
-        ))
-        repo.insert_edge(EdgeRecord(
-            project_id=project_id,
-            from_node_id=task_c.id, to_node_id=task_b.id,
-            type=EdgeType.DEPENDS_ON, created_by=agent_id,
-        ))
+        repo.insert_edge(
+            EdgeRecord(
+                project_id=project_id,
+                from_node_id=task_b.id,
+                to_node_id=task_a.id,
+                type=EdgeType.DEPENDS_ON,
+                created_by=agent_id,
+            )
+        )
+        repo.insert_edge(
+            EdgeRecord(
+                project_id=project_id,
+                from_node_id=task_c.id,
+                to_node_id=task_b.id,
+                type=EdgeType.DEPENDS_ON,
+                created_by=agent_id,
+            )
+        )
 
         _enqueue_task(repo, task_service, project_id, task_a)
         _enqueue_task(repo, task_service, project_id, task_b)
@@ -1074,6 +1088,5 @@ class TestHandoffTransitiveContamination:
         # NOT duplicated from transitive leakage.
         a_content_count = updated_c.body_md.count("Original content from A")
         assert a_content_count <= 1, (
-            f"Transitive contamination: A's content appears {a_content_count} "
-            f"times in C's body_md"
+            f"Transitive contamination: A's content appears {a_content_count} times in C's body_md"
         )

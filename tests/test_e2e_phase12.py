@@ -89,7 +89,8 @@ class TestAcceptAFullRestore:
     ) -> None:
         # 1. Create original node
         original = _node(
-            project_id, agent_id,
+            project_id,
+            agent_id,
             title="Original Title",
             node_type=NodeType.SPEC,
             status=NodeStatus.ACTIVE,
@@ -136,7 +137,10 @@ class TestAcceptAFullRestore:
         svc = ConflictResolutionService(repo)
         svc.create_review_task(project_id, original.id, agent_id, agent_b)
         result = svc.resolve(
-            project_id, original.id, "accept_a", agent_id=agent_id,
+            project_id,
+            original.id,
+            "accept_a",
+            agent_id=agent_id,
         )
         assert result.resolution == "accept_a"
 
@@ -170,20 +174,18 @@ class TestHandoffChainNoContamination:
         tasks = []
         for i in range(5):
             t = _node(
-                project_id, agent_id,
-                title=f"Task-{i+1}",
+                project_id,
+                agent_id,
+                title=f"Task-{i + 1}",
                 node_type=NodeType.TASK,
-                body_md=f"Body of task {i+1}",
+                body_md=f"Body of task {i + 1}",
             )
             repo.upsert_node(t)
             tasks.append(t)
 
         # Create DEPENDS_ON edges: T2→T1, T3→T2, T4→T3, T5→T4
         for i in range(1, 5):
-            repo.insert_edge(
-                _edge(project_id, tasks[i].id, tasks[i - 1].id,
-                      agent_id=agent_id)
-            )
+            repo.insert_edge(_edge(project_id, tasks[i].id, tasks[i - 1].id, agent_id=agent_id))
 
         # Enqueue T2–T5 in task_queue as BLOCKED (required for the JOIN)
         for i in range(1, 5):
@@ -270,10 +272,7 @@ class TestDepthClamping:
             nodes.append(n)
 
         for i in range(10):
-            repo.insert_edge(
-                _edge(project_id, nodes[i].id, nodes[i + 1].id,
-                      agent_id=agent_id)
-            )
+            repo.insert_edge(_edge(project_id, nodes[i].id, nodes[i + 1].id, agent_id=agent_id))
 
         svc = SubgraphService(repo)
 
@@ -317,6 +316,5 @@ class TestEnumSync:
         db_values = {r[0] for r in rows}
         py_values = {v.value for v in py_enum}
         assert db_values == py_values, (
-            f"Mismatch for {db_type}: DB={db_values - py_values}, "
-            f"Python={py_values - db_values}"
+            f"Mismatch for {db_type}: DB={db_values - py_values}, Python={py_values - db_values}"
         )
