@@ -1,5 +1,7 @@
 # kgn
 
+**English** | [한국어](README_KO.md)
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/kgn-banner-dark.png">
   <source media="(prefers-color-scheme: light)" srcset="assets/kgn-banner-light.png">
